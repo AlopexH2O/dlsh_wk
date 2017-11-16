@@ -11,11 +11,11 @@ typedef unsigned int  int32;
 
 //loadinfo struct
 typedef struct {
-	int fun;
-	int inf;
+	uint8 fun;
+	uint8 inf;
 	float pload;//load p info
-	int prior;//load prior setting 
-	int onWhichSys;//load sys connection
+	uint8 prior;//load prior setting 
+	uint8 onWhichSys;//load sys connection
 	bool  beCutted;//load whether be cutted--result
 	bool  alive;
 }LOADINFO;
@@ -60,18 +60,18 @@ typedef struct {
 	float P_HZX;
 
 	//KR state
-	int Conn_S1;
-	int Conn_S2;
-	int Conn_S1S2;
-	int HWJ9511;
-	int HWJ9512;
-	int HWJ9561;
-	int HWJ9562;
-	int HWJ9591;
-	int HWJ9592;
-	int HWJ9571;
-	int HWJ9572;
-	int HWJ9573;
+	uint8 Conn_S1;
+	uint8 Conn_S2;
+	uint8 Conn_S1S2;
+	uint8 HWJ9511;
+	uint8 HWJ9512;
+	uint8 HWJ9561;
+	uint8 HWJ9562;
+	uint8 HWJ9591;
+	uint8 HWJ9592;
+	uint8 HWJ9571;
+	uint8 HWJ9572;
+	uint8 HWJ9573;
 
 }DEVINFO;
 

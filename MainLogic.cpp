@@ -118,7 +118,7 @@ void ReadDevInfo(DEVINFO* dev){
 	func_read(dev->Sys_Stat, SYS_STAT_NUM, env_read);
 #else
 	//从文件中读取系统状态
-	bool res = ReadTestCaseFile(std::string(".\\stat.txt"), std::string(".\\set.txt"), dev);
+	bool res = ReadTestCaseFile(std::string("C:\\Users\\zhengh.NR-RD\\Desktop\\大连石化项目\\XDC.sta"), std::string("C:\\Users\\zhengh.NR-RD\\Desktop\\大连石化项目\\XDC.set"), dev);
 	if (!res){
 		std::cout << "Error: Failed to ReadTestCaseFile!" << endl;
 		exit(0);
@@ -166,49 +166,49 @@ void HandleLoadSys(DEVINFO* dev){
 	int32 temp, index;
 	int32 stat1, stat2;
 	// 开关站系统1线路
-	temp = int32(dev->Sys_Stat[0].value);
+	temp = int32(dev->Load_Conn[0].value);
 	for (int i = 0; i < LINE_NUM_KGZ; ++i){
 		dev->load[i].onWhichSys = (temp & (0x1<<i)) == 0x1 ? 1 :0;
 	}
 	//开关站系统线路2
-	temp = int32(dev->Sys_Stat[1].value);
+	temp = int32(dev->Load_Conn[1].value);
 	for (int i = 0; i < LINE_NUM_KGZ; ++i){
 		dev->load[i].onWhichSys = (temp & (0x1<<i)) == 0x1 ? 2 :0;
 	}
 	//二空压系统1线路
-	temp = int32(dev->Sys_Stat[2].value);
+	temp = int32(dev->Load_Conn[2].value);
 	for (int i = 0; i < LINE_NUM_EKY; ++i){
 		dev->load[i+INDEX_EKY].onWhichSys = (temp & (0x1<<i)) == 0x1 ? 1 :0;
 	}
 	//二空压系统2线路
-	temp = int32(dev->Sys_Stat[3].value);
+	temp = int32(dev->Load_Conn[3].value);
 	for (int i = 0; i < LINE_NUM_EKY; ++i){
 		dev->load[i+INDEX_EKY].onWhichSys = (temp & (0x1<<i)) == 0x1 ? 2 :0;
 	}
 	//三催化系统1线路
-	stat1 = int32(dev->Sys_Stat[4].value);
-	stat2 = int32(dev->Sys_Stat[5].value);
+	stat1 = int32(dev->Load_Conn[4].value);
+	stat2 = int32(dev->Load_Conn[5].value);
 	temp = (stat1 & 0xffff)|((stat2 & 0xffff)<<16);
 	for (int i = 0; i < LINE_NUM_CH3; ++i){
 		dev->load[i+INDEX_CH3].onWhichSys = (temp & (0x1<<i)) == 0x1 ? 1 :0;
 	}
 	//三催化系统2线路
-	stat1 = int32(dev->Sys_Stat[6].value);
-	stat2 = int32(dev->Sys_Stat[7].value);
+	stat1 = int32(dev->Load_Conn[6].value);
+	stat2 = int32(dev->Load_Conn[7].value);
 	temp = (stat1 & 0xffff)|((stat2 & 0xffff)<<16);
 	for (int i = 0; i < LINE_NUM_CH3; ++i){
 		dev->load[i+INDEX_CH3].onWhichSys = (temp & (0x1<<i)) == 0x1 ? 2 :0;
 	}
 	//四催化系统1线路
-	stat1 = int32(dev->Sys_Stat[8].value);
-	stat2 = int32(dev->Sys_Stat[9].value);
+	stat1 = int32(dev->Load_Conn[8].value);
+	stat2 = int32(dev->Load_Conn[9].value);
 	temp = (stat1 & 0xffff)|((stat2 & 0xffff)<<16);
 	for (int i = 0; i < LINE_NUM_CH3; ++i){
 		dev->load[i+INDEX_CH4].onWhichSys = (temp & (0x1<<i)) == 0x1 ? 1 :0;
 	}
 	//四催化系统2线路
-	stat1 = int32(dev->Sys_Stat[10].value);
-	stat2 = int32(dev->Sys_Stat[11].value);
+	stat1 = int32(dev->Load_Conn[10].value);
+	stat2 = int32(dev->Load_Conn[11].value);
 	temp = (stat1 & 0xffff)|((stat2 & 0xffff)<<16);
 	for (int i = 0; i < LINE_NUM_CH3; ++i){
 		dev->load[i+INDEX_CH4].onWhichSys = (temp & (0x1<<i)) == 0x1 ? 2 :0;

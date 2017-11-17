@@ -10,10 +10,8 @@ void main(){
 	ii.inf_num = 3;
 	ii.value = 23;
 
-	//run_tac_simulate();
-#ifdef _DEBUG
-	cout << "DEBUG MODE" << endl;
-#endif
+	run_tac_simulate();
+
 
 	return;
 }

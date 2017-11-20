@@ -36,7 +36,44 @@ bool OutputDevInfo(string& outfile, DEVINFO* dev){
 		<< "四催化系统1线路1：" << dev->Load_Conn[8].value << endl
 		<< "四催化系统1线路2：" << dev->Load_Conn[9].value << endl
 		<< "四催化系统2线路1：" << dev->Load_Conn[10].value << endl
-		<< "四催化系统2线路2：" << dev->Load_Conn[11].value << endl;
+		<< "四催化系统2线路2：" << dev->Load_Conn[11].value << endl
+		<< "-------------------------------------------------------" << endl
+		<< "开关站线路1：" << dev->Load_Conn_KGZ[0].value << endl
+		<< "开关站线路2：" << dev->Load_Conn_KGZ[1].value << endl
+		<< "开关站线路3：" << dev->Load_Conn_KGZ[2].value << endl
+		<< "开关站线路4：" << dev->Load_Conn_KGZ[3].value << endl
+		<< "开关站线路5：" << dev->Load_Conn_KGZ[4].value << endl
+		<< "开关站线路6：" << dev->Load_Conn_KGZ[5].value << endl
+		<< "开关站线路7：" << dev->Load_Conn_KGZ[6].value << endl
+		<< "开关站线路8：" << dev->Load_Conn_KGZ[7].value << endl
+		<< "-------------------------------------------------------" << endl
+		<< "二空压线路1：" << dev->Load_Conn_EKY[0].value << endl
+		<< "二空压线路2：" << dev->Load_Conn_EKY[1].value << endl
+		<< "二空压线路3：" << dev->Load_Conn_EKY[2].value << endl
+		<< "二空压线路4：" << dev->Load_Conn_EKY[3].value << endl
+		<< "二空压线路5：" << dev->Load_Conn_EKY[4].value << endl
+		<< "二空压线路6：" << dev->Load_Conn_EKY[5].value << endl
+		<< "二空压线路7：" << dev->Load_Conn_EKY[6].value << endl
+		<< "二空压线路8：" << dev->Load_Conn_EKY[7].value << endl
+		<< "-------------------------------------------------------" << endl
+		<< "三催化线路1：" << dev->Load_Conn_CH3[0].value << endl
+		<< "三催化线路2：" << dev->Load_Conn_CH3[1].value << endl
+		<< "三催化线路3：" << dev->Load_Conn_CH3[2].value << endl
+		<< "三催化线路4：" << dev->Load_Conn_CH3[3].value << endl
+		<< "三催化线路5：" << dev->Load_Conn_CH3[4].value << endl
+		<< "三催化线路6：" << dev->Load_Conn_CH3[5].value << endl
+		<< "三催化线路7：" << dev->Load_Conn_CH3[6].value << endl
+		<< "三催化线路8：" << dev->Load_Conn_CH3[7].value << endl
+		<< "-------------------------------------------------------" << endl
+		<< "四催化线路1：" << dev->Load_Conn_CH4[0].value << endl
+		<< "四催化线路2：" << dev->Load_Conn_CH4[1].value << endl
+		<< "四催化线路3：" << dev->Load_Conn_CH4[2].value << endl
+		<< "四催化线路4：" << dev->Load_Conn_CH4[3].value << endl
+		<< "四催化线路5：" << dev->Load_Conn_CH4[4].value << endl
+		<< "四催化线路6：" << dev->Load_Conn_CH4[5].value << endl
+		<< "四催化线路7：" << dev->Load_Conn_CH4[6].value << endl
+		<< "四催化线路8：" << dev->Load_Conn_CH4[7].value << endl;
+
 	fout << "=============================开关位置信息====================================="<< endl
 		<< "系统1联网：" << dev->Sys_Stat[0].value << endl
 		<< "系统2联网：" << dev->Sys_Stat[1].value << endl
@@ -47,8 +84,13 @@ bool OutputDevInfo(string& outfile, DEVINFO* dev){
 		<< "9562开关：" << dev->Sys_Stat[6].value << endl
 		<< "9591开关：" << dev->Sys_Stat[7].value << endl
 		<< "9592开关：" << dev->Sys_Stat[8].value << endl
-		<< "9571开关：" << dev->Sys_Stat[9].value << endl
-		<< "9572开关：" << dev->Sys_Stat[10].value << endl;
+		<< "9572开关：" << dev->Sys_Stat[9].value << endl
+		<< "9573开关：" << dev->Sys_Stat[10].value << endl
+		<< "35kVI母归于系统I " << dev->Sys_Stat[11].value << endl
+		<< "35kVI母归于系统II " << dev->Sys_Stat[12].value << endl
+		<< "35kVII母归于系统I " << dev->Sys_Stat[13].value << endl
+		<< "35kVII母归于系统II " << dev->Sys_Stat[14].value << endl;
+
 	fout << "=============================负荷信息====================================="<< endl
 		<< "负荷名称\t" << "功率P\t" << "优先级" << endl
 		<< "8012重整一线功率：    " << dev->Load_P[0 ].value << "\t" << dev->Load_Prior[0 ].value << endl
@@ -630,8 +672,12 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev){
 
 
 
+
+
 	}//end while fot stat
 	fstat.close();
+
+	int stcode = 0;
 
 	while (fset >> s){
 		if(s == "开关站线路01优先级:"){
@@ -956,6 +1002,123 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev){
 			dev->Load_Prior[63].value = atof(value.c_str());
 			continue;
 		}
+		if(s == "母线归属状态:"){//母线归属状态默认是9571开关状态
+			fset >> value;
+			dev->Load_Conn_SHZ[0].value = atof(value.c_str());
+			continue;
+		}
+
+		
+		if(s == "模拟站M试验:"){
+			fset >> value;
+			stcode = atoi(value.c_str());
+			continue;
+		}
+
+		if(s == "执行站M负荷1归属:"){
+			fset >> value;
+			if (stcode == 1){//开关站
+				dev->Load_Conn_KGZ[0].value = atof(value.c_str());
+			}else if (stcode == 2){//二空压
+				dev->Load_Conn_EKY[0].value = atof(value.c_str());
+			}else if (stcode == 3){//三催化
+				dev->Load_Conn_CH3[0].value = atof(value.c_str());
+			}else if (stcode == 4){//三催化
+				dev->Load_Conn_CH4[0].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站M负荷2归属:"){
+			fset >> value;
+			if (stcode == 1){//开关站
+				dev->Load_Conn_KGZ[1].value = atof(value.c_str());
+			}else if (stcode == 2){//二空压
+				dev->Load_Conn_EKY[1].value = atof(value.c_str());
+			}else if (stcode == 3){//三催化
+				dev->Load_Conn_CH3[1].value = atof(value.c_str());
+			}else if (stcode == 4){//三催化
+				dev->Load_Conn_CH4[1].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站M负荷3归属:"){
+			fset >> value;
+			if (stcode == 1){//开关站
+				dev->Load_Conn_KGZ[2].value = atof(value.c_str());
+			}else if (stcode == 2){//二空压
+				dev->Load_Conn_EKY[2].value = atof(value.c_str());
+			}else if (stcode == 3){//三催化
+				dev->Load_Conn_CH3[2].value = atof(value.c_str());
+			}else if (stcode == 4){//三催化
+				dev->Load_Conn_CH4[2].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站M负荷4归属:"){
+			fset >> value;
+			if (stcode == 1){//开关站
+				dev->Load_Conn_KGZ[3].value = atof(value.c_str());
+			}else if (stcode == 2){//二空压
+				dev->Load_Conn_EKY[3].value = atof(value.c_str());
+			}else if (stcode == 3){//三催化
+				dev->Load_Conn_CH3[3].value = atof(value.c_str());
+			}else if (stcode == 4){//三催化
+				dev->Load_Conn_CH4[3].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站M负荷5归属:"){
+			fset >> value;
+			if (stcode == 1){//开关站
+				dev->Load_Conn_KGZ[4].value = atof(value.c_str());
+			}else if (stcode == 2){//二空压
+				dev->Load_Conn_EKY[4].value = atof(value.c_str());
+			}else if (stcode == 3){//三催化
+				dev->Load_Conn_CH3[4].value = atof(value.c_str());
+			}else if (stcode == 4){//三催化
+				dev->Load_Conn_CH4[4].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站M负荷6归属:"){
+			fset >> value;
+			if (stcode == 1){//开关站
+				dev->Load_Conn_KGZ[5].value = atof(value.c_str());
+			}else if (stcode == 2){//二空压
+				dev->Load_Conn_EKY[5].value = atof(value.c_str());
+			}else if (stcode == 3){//三催化
+				dev->Load_Conn_CH3[5].value = atof(value.c_str());
+			}else if (stcode == 4){//三催化
+				dev->Load_Conn_CH4[5].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站M负荷7归属:"){
+			fset >> value;
+			if (stcode == 1){//开关站
+				dev->Load_Conn_KGZ[6].value = atof(value.c_str());
+			}else if (stcode == 2){//二空压
+				dev->Load_Conn_EKY[6].value = atof(value.c_str());
+			}else if (stcode == 3){//三催化
+				dev->Load_Conn_CH3[6].value = atof(value.c_str());
+			}else if (stcode == 4){//三催化
+				dev->Load_Conn_CH4[6].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站M负荷8归属:"){
+			fset >> value;
+			if (stcode == 1){//开关站
+				dev->Load_Conn_KGZ[7].value = atof(value.c_str());
+			}else if (stcode == 2){//二空压
+				dev->Load_Conn_EKY[7].value = atof(value.c_str());
+			}else if (stcode == 3){//三催化
+				dev->Load_Conn_CH3[7].value = atof(value.c_str());
+			}else if (stcode == 4){//三催化
+				dev->Load_Conn_CH4[7].value = atof(value.c_str());
+			}
+			continue;
+		}
 
 	}
 
@@ -964,15 +1127,22 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev){
 	if (!OutputDevInfo(string("tmp.log"), dev)){
 		exit(0);
 	}
-	return false;
+	res = true;
+	return res;
 }
 
 //输出策略结果
 bool SendTacFile(string& oufile, DEVINFO* dev){
 	bool res = false;
 	ofstream fout;
-	fout.open(oufile, ios::out|ios::app);
-	
+	static int lll = 0;
+	if (lll == 0){
+		fout.open(oufile, ios::out);
+	}else{
+		fout.open(oufile, ios::out|ios::app);
+	}
+	lll++;
+
 	if (!fout.is_open()){
 		return res;
 	}
@@ -984,10 +1154,10 @@ bool SendTacFile(string& oufile, DEVINFO* dev){
 	fout << "tac_yq:      " << dev->tac.tac_yq << endl;
 	fout << "tac_kq:      " << dev->tac.tac_kq << endl;
 	fout << "tac_pcutted: " << dev->tac.tac_pcutted << endl;
-	fout << "tac_ncutted: " << dev->tac.tac_ncutted << endl;
+	fout << "tac_ncutted: " << int(dev->tac.tac_ncutted) << endl;
 	fout << "== Loadinfo ==" << endl;
-	for (int i = 0;i <= dev->tac.data_num;i++){
-		fout << "负荷编号-" << i+1 << " ---  " << dev->tac.data[i].cutted << " --- " << dev->load[i].pload << endl;
+	for (int i = 0;i < dev->tac.data_num;i++){
+		fout << "负荷编号- " << i+1 << " ---  " << (dev->tac.data[i].cutted ? "YES" : "NO") << " --- " << dev->load[i].pload << endl;
 	}
 	fout << "=====================================================================" << endl;
 

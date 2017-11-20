@@ -192,10 +192,11 @@ void ReadDevInfo(DEVINFO* dev){
 	dev->P9561 = dev->Sys_P[1].value;
 	dev->P9592 = dev->Sys_P[2].value;
 	dev->P9562 = dev->Sys_P[3].value;
-	dev->P_HJX_1 = dev->Sys_P[4].value;
-	dev->P_HJX_2 = dev->Sys_P[5].value;
-	dev->P_HSX = dev->Sys_P[6].value;
-	dev->P_HZX = dev->Sys_P[7].value;
+	dev->P9572 = dev->Sys_P[4].value;
+	dev->P_HJX_1 = dev->Sys_P[5].value;
+	dev->P_HJX_2 = dev->Sys_P[6].value;
+	dev->P_HSX = dev->Sys_P[7].value;
+	dev->P_HZX = dev->Sys_P[8].value;
 	//系统开入状态预处理
 	dev->Conn_S1 = uint8(dev->Sys_Stat[0].value);
 	dev->Conn_S2 = uint8(dev->Sys_Stat[1].value);
@@ -248,25 +249,25 @@ void HandleLoadSys(DEVINFO* dev){
 	//二空压负荷信息
 	for (int i = 0;i < LINE_NUM_EKY;++i){
 		temp = uint8(dev->Load_Conn_EKY[i].value);
-		stat1 = ((temp & 0x1) & dev->S1_35kV_B1)|((temp & 0x2) & dev->S1_35kV_B2);
-		stat2 = ((temp & 0x1) & dev->S2_35kV_B1)|((temp & 0x2) & dev->S2_35kV_B2);
-		dev->load[i + INDEX_EKY].onWhichSys = stat1 + stat2;
+		stat1 = ((temp & 0x1) & dev->S1_35kV_B1)|(((temp & 0x2)>>1) & dev->S1_35kV_B2);
+		stat2 = ((temp & 0x1) & dev->S2_35kV_B1)|(((temp & 0x2)>>1) & dev->S2_35kV_B2);
+		dev->load[i + INDEX_EKY].onWhichSys = stat1 + stat2 * 2;
 		dev->load[i + INDEX_EKY].voltagelevel = 1;
 	}
 	//三催化负荷信息
 	for (int i = 0;i < LINE_NUM_CH3;++i){
 		temp = uint8(dev->Load_Conn_CH3[i].value);
-		stat1 = ((temp & 0x1) & dev->S1_35kV_B1)|((temp & 0x2) & dev->S1_35kV_B2);
-		stat2 = ((temp & 0x1) & dev->S2_35kV_B1)|((temp & 0x2) & dev->S2_35kV_B2);
-		dev->load[i + INDEX_CH3].onWhichSys = stat1 + stat2;
+		stat1 = ((temp & 0x1) & dev->S1_35kV_B1)|(((temp & 0x2)>>1) & dev->S1_35kV_B2);
+		stat2 = ((temp & 0x1) & dev->S2_35kV_B1)|(((temp & 0x2)>>1) & dev->S2_35kV_B2);
+		dev->load[i + INDEX_CH3].onWhichSys = stat1 + stat2 * 2;
 		dev->load[i + INDEX_CH3].voltagelevel = 1;
 	}
 	//四催化负荷信息
 	for (int i = 0;i < LINE_NUM_CH4;++i){
 		temp = uint8(dev->Load_Conn_CH4[i].value);
-		stat1 = ((temp & 0x1) & dev->S1_35kV_B1)|((temp & 0x2) & dev->S1_35kV_B2);
-		stat2 = ((temp & 0x1) & dev->S2_35kV_B1)|((temp & 0x2) & dev->S2_35kV_B2);
-		dev->load[i + INDEX_CH4].onWhichSys = stat1 + stat2;
+		stat1 = ((temp & 0x1) & dev->S1_35kV_B1)|(((temp & 0x2)>>1) & dev->S1_35kV_B2);
+		stat2 = ((temp & 0x1) & dev->S2_35kV_B1)|(((temp & 0x2)>>1) & dev->S2_35kV_B2);
+ 		dev->load[i + INDEX_CH4].onWhichSys = stat1 + stat2 * 2;
 		dev->load[i + INDEX_CH4].voltagelevel = 1;
 	}
 
@@ -484,7 +485,7 @@ void ExportLoadOutput(DEVINFO* dev){
 			ncutted++;
 		}
 	}
-//	dev->tac.data = dev->LoadOutput;
+	dev->tac.data = dev->LoadOutput;
 	dev->tac.data_num = LOAD_P_NUM;
 	dev->tac.tac_pcutted = pcutted;
 	dev->tac.tac_ncutted = ncutted;
@@ -509,7 +510,7 @@ int RUN_TAC_NO1(DEVINFO* dev){
 	float xql;
 	xql = dev->P9591 - dev->P9572;
 	stat_action_200ms = ((dev->HWJ9591 || dev->HWJ9592) ||
-		((dev->HWJ9571 == 0) && (dev->HWJ9571 || dev->HWJ9572))) 
+		((dev->HWJ9571 == 0) && (dev->HWJ9511 || dev->HWJ9572))) 
 		&& dev->Conn_S2;
 	if (stat_action_200ms && xql > 0.0){
 		//更新策略输出部分参数

@@ -15,6 +15,16 @@
 
 typedef unsigned char uint8;
 
+//厂站标识
+#define SHZZ "石化主"
+#define SHZ  "石化子"
+#define KGZ  "开关站"
+#define EKY  "二空压"
+#define CH3  "三催化"
+#define CH4  "四催化"
+
+
+
 #define LOAD_ALIVE_P   0.1
 
 #define SYS_P_NUM 10
@@ -55,24 +65,47 @@ const uint8 INF_LOAD_PRIOR[LOAD_P_NUM + 1] = {3, 4, 5, 6, 7, 8, 9, 10,11,12,
 const uint8 FUN_LOAD_CONN[LOAD_CONN_NUM] = {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12};
 const uint8 INF_LOAD_CONN[LOAD_CONN_NUM] = {28, 29, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27};
 
-#define SYS_STAT_NUM 11
-const uint8 FUN_SYS_STAT[SYS_STAT_NUM] = {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12};
-const uint8 INF_SYS_STAT[SYS_STAT_NUM] = {28, 29, 18, 19, 20, 21, 22, 23, 24, 25, 27};
+#define SYS_STAT_NUM 15
+const uint8 FUN_SYS_STAT[SYS_STAT_NUM] = {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12};
+const uint8 INF_SYS_STAT[SYS_STAT_NUM] = {28, 29, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 29, 30, 31};
 
 
 #define SYS_TAC_NUM 8	//策略数目
-#define MAX_PRIOR   80	//策略数目
+#define MAX_PRIOR   80	//优先级最大数目
 
 
 #define LINE_NUM_KGZ 12	//开关站负荷数目
 #define LINE_NUM_EKY 9	//二空压负荷数目
 #define LINE_NUM_CH3 20	//三催化负荷数目
 #define LINE_NUM_CH4 22 //四催化负荷数目
+#define LINE_NUM_SHZ 1 //石化子站需求点数目
 
 #define INDEX_EKY LINE_NUM_KGZ					//二空压负荷索引起点
 #define INDEX_CH3 (LINE_NUM_KGZ + INDEX_EKY)    //三催化负荷索引起点
 #define INDEX_CH4 (LINE_NUM_CH3 + INDEX_CH3)    //四催化负荷索引起点
 
+
+
+//开关站负荷系统连接信息
+//66kV母线挂载信息
+const uint8 FUN_KGZ_LOAD[LINE_NUM_KGZ] = {1, 2, 3, 4, 5, 6, 7, 8, 9 ,10, 11, 12};
+const uint8 INF_KGZ_LOAD[LINE_NUM_KGZ] = {1, 2, 3, 4, 5, 6, 7, 8, 9 ,10, 11, 12};
+
+//二空压负荷系统连接信息
+const uint8 FUN_EKY_LOAD[LINE_NUM_EKY] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+const uint8 INF_EKY_LOAD[LINE_NUM_EKY] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+//三催化负荷系统连接信息
+const uint8 FUN_CH3_LOAD[LINE_NUM_CH3] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+const uint8 INF_CH3_LOAD[LINE_NUM_CH3] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+
+//四催化负荷系统连接信息
+const uint8 FUN_CH4_LOAD[LINE_NUM_CH4] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
+const uint8 INF_CH4_LOAD[LINE_NUM_CH4] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
+
+//石化控制子站--9571开关TWJ信息
+const uint8 FUN_SHZ_LOAD[LINE_NUM_SHZ] = {15 };
+const uint8 INF_SHZ_LOAD[LINE_NUM_SHZ] = {27 };
 
 
 #endif
@@ -280,6 +313,11 @@ SYS_STATE（系统运行方式状态）
 12   ,24    ,9592开关运行
 12   ,25    ,9572开关运行		
 12   ,26    ,9573开关运行
+12   ,xx    ,35kVI母归于系统I
+12   ,xx    ,35kVI母归于系统II
+12   ,xx    ,35kVII母归于系统I
+12   ,xx    ,35kVII母归于系统II
+
 
 */
 

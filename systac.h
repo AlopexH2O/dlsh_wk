@@ -7,8 +7,8 @@
 #include "simulator_define.h"
 
 
-typedef void (*DATA_HANDLER)(InputItem *input,uint8 data_num,void *env);
-typedef void (*TAC_HANDLER)(TacOutput *output,uint8 data_num,void *env);
+typedef void (*DATA_HANDLER)(const char* station_code,InputItem *input,uint8 data_num,void *env);
+typedef void (*TAC_HANDLER)( const char* station_code,TacOutput *output,uint8 data_num,void *env);
 
 //输入回调函数
 void data_register(DATA_HANDLER data_handler,void *env); //env参数传递给DATA_HANDLER中的env

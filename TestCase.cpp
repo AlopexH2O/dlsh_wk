@@ -604,9 +604,31 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev){
 		}
 		if(s == "9572开关运行："){
 			fstat >> value;
-			dev->Sys_Stat[10].value = atof(value.c_str());
+			dev->Sys_Stat[9].value = atof(value.c_str());
 			continue;
 		}
+		if(s == "35kVI母归于系统I："){
+			fstat >> value;
+			dev->Sys_Stat[11].value = atof(value.c_str());
+			continue;
+		}
+		if(s == "35kVI母归于系统II："){
+			fstat >> value;
+			dev->Sys_Stat[12].value = atof(value.c_str());
+			continue;
+		}
+		if(s == "35kVII母归于系统I："){
+			fstat >> value;
+			dev->Sys_Stat[13].value = atof(value.c_str());
+			continue;
+		}
+		if(s == "35kVII母归于系统II："){
+			fstat >> value;
+			dev->Sys_Stat[14].value = atof(value.c_str());
+			continue;
+		}
+
+
 
 	}//end while fot stat
 	fstat.close();

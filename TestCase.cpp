@@ -37,43 +37,22 @@ bool OutputDevInfo(string& outfile, DEVINFO* dev){
 		<< "四催化系统1线路2：" << dev->Load_Conn[9].value << endl
 		<< "四催化系统2线路1：" << dev->Load_Conn[10].value << endl
 		<< "四催化系统2线路2：" << dev->Load_Conn[11].value << endl
-		<< "-------------------------------------------------------" << endl
-		<< "开关站线路1：" << dev->Load_Conn_KGZ[0].value << endl
-		<< "开关站线路2：" << dev->Load_Conn_KGZ[1].value << endl
-		<< "开关站线路3：" << dev->Load_Conn_KGZ[2].value << endl
-		<< "开关站线路4：" << dev->Load_Conn_KGZ[3].value << endl
-		<< "开关站线路5：" << dev->Load_Conn_KGZ[4].value << endl
-		<< "开关站线路6：" << dev->Load_Conn_KGZ[5].value << endl
-		<< "开关站线路7：" << dev->Load_Conn_KGZ[6].value << endl
-		<< "开关站线路8：" << dev->Load_Conn_KGZ[7].value << endl
-		<< "-------------------------------------------------------" << endl
-		<< "二空压线路1：" << dev->Load_Conn_EKY[0].value << endl
-		<< "二空压线路2：" << dev->Load_Conn_EKY[1].value << endl
-		<< "二空压线路3：" << dev->Load_Conn_EKY[2].value << endl
-		<< "二空压线路4：" << dev->Load_Conn_EKY[3].value << endl
-		<< "二空压线路5：" << dev->Load_Conn_EKY[4].value << endl
-		<< "二空压线路6：" << dev->Load_Conn_EKY[5].value << endl
-		<< "二空压线路7：" << dev->Load_Conn_EKY[6].value << endl
-		<< "二空压线路8：" << dev->Load_Conn_EKY[7].value << endl
-		<< "-------------------------------------------------------" << endl
-		<< "三催化线路1：" << dev->Load_Conn_CH3[0].value << endl
-		<< "三催化线路2：" << dev->Load_Conn_CH3[1].value << endl
-		<< "三催化线路3：" << dev->Load_Conn_CH3[2].value << endl
-		<< "三催化线路4：" << dev->Load_Conn_CH3[3].value << endl
-		<< "三催化线路5：" << dev->Load_Conn_CH3[4].value << endl
-		<< "三催化线路6：" << dev->Load_Conn_CH3[5].value << endl
-		<< "三催化线路7：" << dev->Load_Conn_CH3[6].value << endl
-		<< "三催化线路8：" << dev->Load_Conn_CH3[7].value << endl
-		<< "-------------------------------------------------------" << endl
-		<< "四催化线路1：" << dev->Load_Conn_CH4[0].value << endl
-		<< "四催化线路2：" << dev->Load_Conn_CH4[1].value << endl
-		<< "四催化线路3：" << dev->Load_Conn_CH4[2].value << endl
-		<< "四催化线路4：" << dev->Load_Conn_CH4[3].value << endl
-		<< "四催化线路5：" << dev->Load_Conn_CH4[4].value << endl
-		<< "四催化线路6：" << dev->Load_Conn_CH4[5].value << endl
-		<< "四催化线路7：" << dev->Load_Conn_CH4[6].value << endl
-		<< "四催化线路8：" << dev->Load_Conn_CH4[7].value << endl;
-
+		<< "-------------------------------------------------------" << endl;
+		for (int i = 0;i < LINE_NUM_KGZ;++i){
+			fout << "开关站线路" << i + 1 << ":" << dev->Load_Conn_KGZ[i].value << endl;
+		}
+		fout << "-------------------------------------------------------" << endl;
+		for (int i = 0;i < LINE_NUM_EKY;++i){
+			fout << "二空压线路" << i + 1 << ":" << dev->Load_Conn_EKY[i].value << endl;
+		}
+		fout << "-------------------------------------------------------" << endl;
+		for (int i = 0;i < LINE_NUM_CH3;++i){
+			fout << "三催化线路" << i + 1 << ":" << dev->Load_Conn_CH3[i].value << endl;
+		}
+		fout << "-------------------------------------------------------" << endl;
+		for (int i = 0;i < LINE_NUM_CH4;++i){
+			fout << "四催化线路" << i + 1 << ":" << dev->Load_Conn_CH4[i].value << endl;
+		}
 	fout << "=============================开关位置信息====================================="<< endl
 		<< "系统1联网：" << dev->Sys_Stat[0].value << endl
 		<< "系统2联网：" << dev->Sys_Stat[1].value << endl
@@ -92,70 +71,73 @@ bool OutputDevInfo(string& outfile, DEVINFO* dev){
 		<< "35kVII母归于系统II " << dev->Sys_Stat[14].value << endl;
 
 	fout << "=============================负荷信息====================================="<< endl
-		<< "负荷名称\t" << "功率P\t" << "优先级" << endl
-		<< "8012重整一线功率：    " << dev->Load_P[0 ].value << "\t" << dev->Load_Prior[0 ].value << endl
-		<< "8013加氢裂化功率：    " << dev->Load_P[1 ].value << "\t" << dev->Load_Prior[1 ].value << endl
-		<< "8014煤柴加氢功率：    " << dev->Load_P[2 ].value << "\t" << dev->Load_Prior[2 ].value << endl
-		<< "8015渣油加氢功率：    " << dev->Load_P[3 ].value << "\t" << dev->Load_Prior[3 ].value << endl
-		<< "备用线路05功率：      " << dev->Load_P[4 ].value << "\t" << dev->Load_Prior[4 ].value << endl
-		<< "备用线路06功率：      " << dev->Load_P[5 ].value << "\t" << dev->Load_Prior[5 ].value << endl
-		<< "8022重整二线功率：    " << dev->Load_P[6 ].value << "\t" << dev->Load_Prior[6 ].value << endl
-		<< "8023加氢裂化二线功率：" << dev->Load_P[7 ].value << "\t" << dev->Load_Prior[7 ].value << endl
-		<< "8024煤柴加氢二线功率：" << dev->Load_P[8 ].value << "\t" << dev->Load_Prior[8 ].value << endl
-		<< "8025渣油加氢二线功率：" << dev->Load_P[9 ].value << "\t" << dev->Load_Prior[9 ].value << endl
-		<< "备用线路11功率：      " << dev->Load_P[10].value << "\t" << dev->Load_Prior[10].value << endl
-		<< "备用线路12功率：      " << dev->Load_P[11].value << "\t" << dev->Load_Prior[11].value << endl
-		<< "3101新沉箱甲线功率：  " << dev->Load_P[12].value << "\t" << dev->Load_Prior[12].value << endl
-		<< "3103二循甲线功率：    " << dev->Load_P[13].value << "\t" << dev->Load_Prior[13].value << endl
-		<< "3105热力甲线功率：    " << dev->Load_P[14].value << "\t" << dev->Load_Prior[14].value << endl
-		<< "备用线路04功率：      " << dev->Load_P[15].value << "\t" << dev->Load_Prior[15].value << endl
-		<< "3102新沉箱乙线功率：  " << dev->Load_P[16].value << "\t" << dev->Load_Prior[16].value << endl
-		<< "3104二循乙线功率：    " << dev->Load_P[17].value << "\t" << dev->Load_Prior[17].value << endl
-		<< "3105热力乙线功率：    " << dev->Load_P[18].value << "\t" << dev->Load_Prior[18].value << endl
-		<< "3151功率：            " << dev->Load_P[19].value << "\t" << dev->Load_Prior[19].value << endl
-		<< "3152功率：            " << dev->Load_P[20].value << "\t" << dev->Load_Prior[20].value << endl
-		<< "3557干气甲线功率：    " << dev->Load_P[21].value << "\t" << dev->Load_Prior[21].value << endl
-		<< "3558干气乙线功率：    " << dev->Load_P[22].value << "\t" << dev->Load_Prior[22].value << endl
-		<< "3605柴油加氢甲线功率：" << dev->Load_P[23].value << "\t" << dev->Load_Prior[23].value << endl
-		<< "3607重污油甲线功率：  " << dev->Load_P[24].value << "\t" << dev->Load_Prior[24].value << endl
-		<< "3609三催化5#变功率：  " << dev->Load_P[25].value << "\t" << dev->Load_Prior[25].value << endl
-		<< "3551（6kV1母）功率：  " << dev->Load_P[26].value << "\t" << dev->Load_Prior[26].value << endl
-		<< "3552（6kV2母）功率：  " << dev->Load_P[27].value << "\t" << dev->Load_Prior[27].value << endl
-		<< "3651（6kV3母）功率：  " << dev->Load_P[28].value << "\t" << dev->Load_Prior[28].value << endl
-		<< "3569启动变功率：      " << dev->Load_P[29].value << "\t" << dev->Load_Prior[29].value << endl
-		<< "3606柴油加氢乙线功率：" << dev->Load_P[30].value << "\t" << dev->Load_Prior[30].value << endl
-		<< "3608重污油乙功率：    " << dev->Load_P[31].value << "\t" << dev->Load_Prior[31].value << endl
-		<< "3611富氢甲功率：      " << dev->Load_P[32].value << "\t" << dev->Load_Prior[32].value << endl
-		<< "3615氢压机甲功率：    " << dev->Load_P[33].value << "\t" << dev->Load_Prior[33].value << endl
-		<< "3617柴升甲功率：      " << dev->Load_P[34].value << "\t" << dev->Load_Prior[34].value << endl
-		<< "3612富氢乙功率：      " << dev->Load_P[35].value << "\t" << dev->Load_Prior[35].value << endl
-		<< "3616氢压机乙功率：    " << dev->Load_P[36].value << "\t" << dev->Load_Prior[36].value << endl
-		<< "3618柴升乙功率：      " << dev->Load_P[37].value << "\t" << dev->Load_Prior[37].value << endl
-		<< "3653（6kV5母）功率：  " << dev->Load_P[38].value << "\t" << dev->Load_Prior[38].value << endl
-		<< "3654（6kV6母）功率：  " << dev->Load_P[39].value << "\t" << dev->Load_Prior[39].value << endl
-		<< "3652（6kV4母）功率：  " << dev->Load_P[40].value << "\t" << dev->Load_Prior[40].value << endl
-		<< "3903中水甲线功率：    " << dev->Load_P[41].value << "\t" << dev->Load_Prior[41].value << endl
-		<< "3905管控甲线功率：    " << dev->Load_P[42].value << "\t" << dev->Load_Prior[42].value << endl
-		<< "备用线路03功率：      " << dev->Load_P[43].value << "\t" << dev->Load_Prior[43].value << endl
-		<< "3904中水乙线功率：    " << dev->Load_P[44].value << "\t" << dev->Load_Prior[44].value << endl
-		<< "3906管控乙线功率：    " << dev->Load_P[45].value << "\t" << dev->Load_Prior[45].value << endl
-		<< "备用功率1：           " << dev->Load_P[46].value << "\t" << dev->Load_Prior[46].value << endl
-		<< "3953功率：            " << dev->Load_P[47].value << "\t" << dev->Load_Prior[47].value << endl
-		<< "3954功率：            " << dev->Load_P[48].value << "\t" << dev->Load_Prior[48].value << endl
-		<< "3931功率：            " << dev->Load_P[49].value << "\t" << dev->Load_Prior[49].value << endl
-		<< "3941功率：            " << dev->Load_P[50].value << "\t" << dev->Load_Prior[50].value << endl
-		<< "4801中间罐甲线功率：  " << dev->Load_P[51].value << "\t" << dev->Load_Prior[51].value << endl
-		<< "备用功率2：           " << dev->Load_P[52].value << "\t" << dev->Load_Prior[52].value << endl
-		<< "备用功率3：           " << dev->Load_P[53].value << "\t" << dev->Load_Prior[53].value << endl
-		<< "备用功率4：           " << dev->Load_P[54].value << "\t" << dev->Load_Prior[54].value << endl
-		<< "备用功率5：           " << dev->Load_P[55].value << "\t" << dev->Load_Prior[55].value << endl
-		<< "4802中间罐乙线功率：  " << dev->Load_P[56].value << "\t" << dev->Load_Prior[56].value << endl
-		<< "备用功率6：           " << dev->Load_P[57].value << "\t" << dev->Load_Prior[57].value << endl
-		<< "备用功率7：           " << dev->Load_P[58].value << "\t" << dev->Load_Prior[58].value << endl
-		<< "备用功率8：           " << dev->Load_P[59].value << "\t" << dev->Load_Prior[59].value << endl
-		<< "备用功率9：           " << dev->Load_P[60].value << "\t" << dev->Load_Prior[60].value << endl
-		<< "4851功率10：          " << dev->Load_P[61].value << "\t" << dev->Load_Prior[61].value << endl
-		<< "4852功率11：          " << dev->Load_P[62].value << "\t" << dev->Load_Prior[62].value << endl;
+		<< "负荷名称\t" << "功率P\t" << "优先级\t" << "系统\t"<< endl
+		<< "8012重整一线功率：    " << dev->Load_P[0 ].value << "\t" << dev->Load_Prior[0 ].value << "\t" << dev->Load_Conn_KGZ[0].value <<endl
+		<< "8013加氢裂化功率：    " << dev->Load_P[1 ].value << "\t" << dev->Load_Prior[1 ].value << "\t" << dev->Load_Conn_KGZ[1].value<< endl
+		<< "8014煤柴加氢功率：    " << dev->Load_P[2 ].value << "\t" << dev->Load_Prior[2 ].value << "\t" << dev->Load_Conn_KGZ[2].value<< endl
+		<< "8015渣油加氢功率：    " << dev->Load_P[3 ].value << "\t" << dev->Load_Prior[3 ].value << "\t" << dev->Load_Conn_KGZ[3].value<< endl
+		<< "备用线路05功率：      " << dev->Load_P[4 ].value << "\t" << dev->Load_Prior[4 ].value << "\t" << dev->Load_Conn_KGZ[4].value<< endl
+		<< "备用线路06功率：      " << dev->Load_P[5 ].value << "\t" << dev->Load_Prior[5 ].value << "\t" << dev->Load_Conn_KGZ[5].value<< endl
+		<< "8022重整二线功率：    " << dev->Load_P[6 ].value << "\t" << dev->Load_Prior[6 ].value << "\t" << dev->Load_Conn_KGZ[6].value<< endl
+		<< "8023加氢裂化二线功率：" << dev->Load_P[7 ].value << "\t" << dev->Load_Prior[7 ].value << "\t" << dev->Load_Conn_KGZ[7].value<< endl
+		<< "8024煤柴加氢二线功率：" << dev->Load_P[8 ].value << "\t" << dev->Load_Prior[8 ].value << "\t" << dev->Load_Conn_KGZ[8].value<< endl
+		<< "8025渣油加氢二线功率：" << dev->Load_P[9 ].value << "\t" << dev->Load_Prior[9 ].value << "\t" << dev->Load_Conn_KGZ[9].value<< endl
+		<< "备用线路11功率：      " << dev->Load_P[10].value << "\t" << dev->Load_Prior[10].value << "\t" << dev->Load_Conn_KGZ[10].value<< endl
+		<< "备用线路12功率：      " << dev->Load_P[11].value << "\t" << dev->Load_Prior[11].value << "\t" << dev->Load_Conn_KGZ[11].value<< endl
+		<< "-------------------------------------------------------------" << endl
+		<< "3101新沉箱甲线功率：  " << dev->Load_P[12].value << "\t" << dev->Load_Prior[12].value << "\t" << dev->Load_Conn_EKY[0].value<< endl
+		<< "3103二循甲线功率：    " << dev->Load_P[13].value << "\t" << dev->Load_Prior[13].value << "\t" << dev->Load_Conn_EKY[1].value<< endl
+		<< "3105热力甲线功率：    " << dev->Load_P[14].value << "\t" << dev->Load_Prior[14].value << "\t" << dev->Load_Conn_EKY[2].value<< endl
+		<< "备用线路04功率：      " << dev->Load_P[15].value << "\t" << dev->Load_Prior[15].value << "\t" << dev->Load_Conn_EKY[3].value<< endl
+		<< "3102新沉箱乙线功率：  " << dev->Load_P[16].value << "\t" << dev->Load_Prior[16].value << "\t" << dev->Load_Conn_EKY[4].value<< endl
+		<< "3104二循乙线功率：    " << dev->Load_P[17].value << "\t" << dev->Load_Prior[17].value << "\t" << dev->Load_Conn_EKY[5].value<< endl
+		<< "3105热力乙线功率：    " << dev->Load_P[18].value << "\t" << dev->Load_Prior[18].value << "\t" << dev->Load_Conn_EKY[6].value<< endl
+		<< "3151功率：            " << dev->Load_P[19].value << "\t" << dev->Load_Prior[19].value << "\t" << dev->Load_Conn_EKY[7].value<< endl
+		<< "3152功率：            " << dev->Load_P[20].value << "\t" << dev->Load_Prior[20].value << "\t" << dev->Load_Conn_EKY[8].value<< endl
+		<< "-------------------------------------------------------------" << endl
+		<< "3557干气甲线功率：    " << dev->Load_P[21].value << "\t" << dev->Load_Prior[21].value << "\t" << dev->Load_Conn_CH3[0].value<< endl
+		<< "3558干气乙线功率：    " << dev->Load_P[22].value << "\t" << dev->Load_Prior[22].value << "\t" << dev->Load_Conn_CH3[1].value<< endl
+		<< "3605柴油加氢甲线功率：" << dev->Load_P[23].value << "\t" << dev->Load_Prior[23].value << "\t" << dev->Load_Conn_CH3[2].value<< endl
+		<< "3607重污油甲线功率：  " << dev->Load_P[24].value << "\t" << dev->Load_Prior[24].value << "\t" << dev->Load_Conn_CH3[3].value<< endl
+		<< "3609三催化5#变功率：  " << dev->Load_P[25].value << "\t" << dev->Load_Prior[25].value << "\t" << dev->Load_Conn_CH3[4].value<< endl
+		<< "3551（6kV1母）功率：  " << dev->Load_P[26].value << "\t" << dev->Load_Prior[26].value << "\t" << dev->Load_Conn_CH3[5].value<< endl
+		<< "3552（6kV2母）功率：  " << dev->Load_P[27].value << "\t" << dev->Load_Prior[27].value << "\t" << dev->Load_Conn_CH3[6].value<< endl
+		<< "3651（6kV3母）功率：  " << dev->Load_P[28].value << "\t" << dev->Load_Prior[28].value << "\t" << dev->Load_Conn_CH3[7].value<< endl
+		<< "3569启动变功率：      " << dev->Load_P[29].value << "\t" << dev->Load_Prior[29].value << "\t" << dev->Load_Conn_CH3[8].value<< endl
+		<< "3606柴油加氢乙线功率：" << dev->Load_P[30].value << "\t" << dev->Load_Prior[30].value << "\t" << dev->Load_Conn_CH3[9].value<< endl
+		<< "3608重污油乙功率：    " << dev->Load_P[31].value << "\t" << dev->Load_Prior[31].value << "\t" << dev->Load_Conn_CH3[10].value<< endl
+		<< "3611富氢甲功率：      " << dev->Load_P[32].value << "\t" << dev->Load_Prior[32].value << "\t" << dev->Load_Conn_CH3[11].value<< endl
+		<< "3615氢压机甲功率：    " << dev->Load_P[33].value << "\t" << dev->Load_Prior[33].value << "\t" << dev->Load_Conn_CH3[12].value<< endl
+		<< "3617柴升甲功率：      " << dev->Load_P[34].value << "\t" << dev->Load_Prior[34].value << "\t" << dev->Load_Conn_CH3[13].value<< endl
+		<< "3612富氢乙功率：      " << dev->Load_P[35].value << "\t" << dev->Load_Prior[35].value << "\t" << dev->Load_Conn_CH3[14].value<< endl
+		<< "3616氢压机乙功率：    " << dev->Load_P[36].value << "\t" << dev->Load_Prior[36].value << "\t" << dev->Load_Conn_CH3[15].value<< endl
+		<< "3618柴升乙功率：      " << dev->Load_P[37].value << "\t" << dev->Load_Prior[37].value << "\t" << dev->Load_Conn_CH3[16].value<< endl
+		<< "3653（6kV5母）功率：  " << dev->Load_P[38].value << "\t" << dev->Load_Prior[38].value << "\t" << dev->Load_Conn_CH3[17].value<< endl
+		<< "3654（6kV6母）功率：  " << dev->Load_P[39].value << "\t" << dev->Load_Prior[39].value << "\t" << dev->Load_Conn_CH3[18].value<< endl
+		<< "3652（6kV4母）功率：  " << dev->Load_P[40].value << "\t" << dev->Load_Prior[40].value << "\t" << dev->Load_Conn_CH3[19].value<< endl
+		<< "-------------------------------------------------------------" << endl
+		<< "3903中水甲线功率：    " << dev->Load_P[41].value << "\t" << dev->Load_Prior[41].value << "\t" << dev->Load_Conn_CH4[0].value<< endl
+		<< "3905管控甲线功率：    " << dev->Load_P[42].value << "\t" << dev->Load_Prior[42].value << "\t" << dev->Load_Conn_CH4[1].value<< endl
+		<< "备用线路03功率：      " << dev->Load_P[43].value << "\t" << dev->Load_Prior[43].value << "\t" << dev->Load_Conn_CH4[2].value<< endl
+		<< "3904中水乙线功率：    " << dev->Load_P[44].value << "\t" << dev->Load_Prior[44].value << "\t" << dev->Load_Conn_CH4[3].value<< endl
+		<< "3906管控乙线功率：    " << dev->Load_P[45].value << "\t" << dev->Load_Prior[45].value << "\t" << dev->Load_Conn_CH4[4].value<< endl
+		<< "备用功率1：           " << dev->Load_P[46].value << "\t" << dev->Load_Prior[46].value << "\t" << dev->Load_Conn_CH4[5].value<< endl
+		<< "3953功率：            " << dev->Load_P[47].value << "\t" << dev->Load_Prior[47].value << "\t" << dev->Load_Conn_CH4[6].value<< endl
+		<< "3954功率：            " << dev->Load_P[48].value << "\t" << dev->Load_Prior[48].value << "\t" << dev->Load_Conn_CH4[7].value<< endl
+		<< "3931功率：            " << dev->Load_P[49].value << "\t" << dev->Load_Prior[49].value << "\t" << dev->Load_Conn_CH4[8].value<< endl
+		<< "3941功率：            " << dev->Load_P[50].value << "\t" << dev->Load_Prior[50].value << "\t" << dev->Load_Conn_CH4[9].value<< endl
+		<< "4801中间罐甲线功率：  " << dev->Load_P[51].value << "\t" << dev->Load_Prior[51].value << "\t" << dev->Load_Conn_CH4[10].value<< endl
+		<< "备用功率2：           " << dev->Load_P[52].value << "\t" << dev->Load_Prior[52].value << "\t" << dev->Load_Conn_CH4[11].value<< endl
+		<< "备用功率3：           " << dev->Load_P[53].value << "\t" << dev->Load_Prior[53].value << "\t" << dev->Load_Conn_CH4[12].value<< endl
+		<< "备用功率4：           " << dev->Load_P[54].value << "\t" << dev->Load_Prior[54].value << "\t" << dev->Load_Conn_CH4[13].value<< endl
+		<< "备用功率5：           " << dev->Load_P[55].value << "\t" << dev->Load_Prior[55].value << "\t" << dev->Load_Conn_CH4[14].value<< endl
+		<< "4802中间罐乙线功率：  " << dev->Load_P[56].value << "\t" << dev->Load_Prior[56].value << "\t" << dev->Load_Conn_CH4[15].value<< endl
+		<< "备用功率6：           " << dev->Load_P[57].value << "\t" << dev->Load_Prior[57].value << "\t" << dev->Load_Conn_CH4[16].value<< endl
+		<< "备用功率7：           " << dev->Load_P[58].value << "\t" << dev->Load_Prior[58].value << "\t" << dev->Load_Conn_CH4[17].value<< endl
+		<< "备用功率8：           " << dev->Load_P[59].value << "\t" << dev->Load_Prior[59].value << "\t" << dev->Load_Conn_CH4[18].value<< endl
+		<< "备用功率9：           " << dev->Load_P[60].value << "\t" << dev->Load_Prior[60].value << "\t" << dev->Load_Conn_CH4[19].value<< endl
+		<< "4851功率10：          " << dev->Load_P[61].value << "\t" << dev->Load_Prior[61].value << "\t" << dev->Load_Conn_CH4[20].value<< endl
+		<< "4852功率11：          " << dev->Load_P[62].value << "\t" << dev->Load_Prior[62].value << "\t" << dev->Load_Conn_CH4[21].value<< endl;
 
 	fout << "===============================定值======================================"<< endl
 		<< "频稳欠切功率定值：" << dev->Load_Prior[63].value << endl;
@@ -215,9 +197,14 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev){
 			dev->Sys_P[6].value = atof(value.c_str());
 			continue;
 		}
-		if(s == "化总二功率："){
+		if(s == "化总一功率："){
 			fstat >> value;
 			dev->Sys_P[7].value = atof(value.c_str());
+			continue;
+		}
+		if(s == "化总二功率："){
+			fstat >> value;
+			dev->Sys_P[8].value = atof(value.c_str());
 			continue;
 		}
 		if(s == "开关站系统1线路："){
@@ -678,6 +665,7 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev){
 	fstat.close();
 
 	int stcode = 0;
+	int stcoden = 0;
 
 	while (fset >> s){
 		if(s == "开关站线路01优先级:"){
@@ -1119,6 +1107,118 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev){
 			}
 			continue;
 		}
+
+		if(s == "模拟站N试验:"){
+			fset >> value;
+			stcoden = atoi(value.c_str());
+			continue;
+		}
+
+		if(s == "执行站N负荷1归属:"){
+			fset >> value;
+			if (stcoden == 1){//开关站
+				dev->Load_Conn_KGZ[0].value = atof(value.c_str());
+			}else if (stcoden == 2){//二空压
+				dev->Load_Conn_EKY[0].value = atof(value.c_str());
+			}else if (stcoden == 3){//三催化
+				dev->Load_Conn_CH3[0].value = atof(value.c_str());
+			}else if (stcoden == 4){//三催化
+				dev->Load_Conn_CH4[0].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站N负荷2归属:"){
+			fset >> value;
+			if (stcoden == 1){//开关站
+				dev->Load_Conn_KGZ[1].value = atof(value.c_str());
+			}else if (stcoden == 2){//二空压
+				dev->Load_Conn_EKY[1].value = atof(value.c_str());
+			}else if (stcoden == 3){//三催化
+				dev->Load_Conn_CH3[1].value = atof(value.c_str());
+			}else if (stcoden == 4){//三催化
+				dev->Load_Conn_CH4[1].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站N负荷3归属:"){
+			fset >> value;
+			if (stcoden == 1){//开关站
+				dev->Load_Conn_KGZ[2].value = atof(value.c_str());
+			}else if (stcoden == 2){//二空压
+				dev->Load_Conn_EKY[2].value = atof(value.c_str());
+			}else if (stcoden == 3){//三催化
+				dev->Load_Conn_CH3[2].value = atof(value.c_str());
+			}else if (stcoden == 4){//三催化
+				dev->Load_Conn_CH4[2].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站N负荷4归属:"){
+			fset >> value;
+			if (stcoden == 1){//开关站
+				dev->Load_Conn_KGZ[3].value = atof(value.c_str());
+			}else if (stcoden == 2){//二空压
+				dev->Load_Conn_EKY[3].value = atof(value.c_str());
+			}else if (stcoden == 3){//三催化
+				dev->Load_Conn_CH3[3].value = atof(value.c_str());
+			}else if (stcoden == 4){//三催化
+				dev->Load_Conn_CH4[3].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站N负荷5归属:"){
+			fset >> value;
+			if (stcoden == 1){//开关站
+				dev->Load_Conn_KGZ[4].value = atof(value.c_str());
+			}else if (stcoden == 2){//二空压
+				dev->Load_Conn_EKY[4].value = atof(value.c_str());
+			}else if (stcoden == 3){//三催化
+				dev->Load_Conn_CH3[4].value = atof(value.c_str());
+			}else if (stcoden == 4){//三催化
+				dev->Load_Conn_CH4[4].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站N负荷6归属:"){
+			fset >> value;
+			if (stcoden == 1){//开关站
+				dev->Load_Conn_KGZ[5].value = atof(value.c_str());
+			}else if (stcoden == 2){//二空压
+				dev->Load_Conn_EKY[5].value = atof(value.c_str());
+			}else if (stcoden == 3){//三催化
+				dev->Load_Conn_CH3[5].value = atof(value.c_str());
+			}else if (stcoden == 4){//三催化
+				dev->Load_Conn_CH4[5].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站N负荷7归属:"){
+			fset >> value;
+			if (stcoden == 1){//开关站
+				dev->Load_Conn_KGZ[6].value = atof(value.c_str());
+			}else if (stcoden == 2){//二空压
+				dev->Load_Conn_EKY[6].value = atof(value.c_str());
+			}else if (stcoden == 3){//三催化
+				dev->Load_Conn_CH3[6].value = atof(value.c_str());
+			}else if (stcoden == 4){//三催化
+				dev->Load_Conn_CH4[6].value = atof(value.c_str());
+			}
+			continue;
+		}
+		if(s == "执行站N负荷8归属:"){
+			fset >> value;
+			if (stcoden == 1){//开关站
+				dev->Load_Conn_KGZ[7].value = atof(value.c_str());
+			}else if (stcoden == 2){//二空压
+				dev->Load_Conn_EKY[7].value = atof(value.c_str());
+			}else if (stcoden == 3){//三催化
+				dev->Load_Conn_CH3[7].value = atof(value.c_str());
+			}else if (stcoden == 4){//三催化
+				dev->Load_Conn_CH4[7].value = atof(value.c_str());
+			}
+			continue;
+		}
+
 
 	}
 

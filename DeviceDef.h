@@ -39,10 +39,10 @@ typedef struct {
 	InputItem Load_Conn_SHZ[LINE_NUM_SHZ];
 
 	//out
-	OutputItem LoadOutput[LOAD_P_NUM];
+	OutputItem LoadOutput[LOAD_P_NUM + 4];//增加输出化机双线、化总双线的切除情况
 	TacOutput  tac;
 	//sys
-	LOADINFO load[LOAD_P_NUM];//load element 
+	LOADINFO load[LOAD_P_NUM+4];//load element,增加化机双线和华总双线的负荷情况 
 	float p_qq_setting;//频率欠切控制定值
 
 	float p_all_kq;//所有负荷可切功率
@@ -68,8 +68,8 @@ typedef struct {
 	float P9572;
 	float P_HJX_1;
 	float P_HJX_2;
-	float P_HSX;
-	float P_HZX;
+	float P_HZX_1;
+	float P_HZX_2;
 
 	//KR state
 	uint8 Conn_S1;

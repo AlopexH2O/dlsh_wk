@@ -403,7 +403,10 @@ void CalLoadInfoByPrior(DEVINFO* dev, uint8 sys, uint8 vl){
 		if (!dev->load[i].alive || (dev->load[i].prior <= 0)){
 			continue;
 		}
-		if ((dev->load[i].onWhichSys != sys) || ((dev->load[i].voltagelevel & vl) == 0x0)){
+		if ((dev->load[i].voltagelevel & vl) == 0x0){//电压等级不匹配
+			continue;
+		}
+		if (((sys != 3) && (dev->load[i].onWhichSys != sys)) || (dev->load[i].onWhichSys <= 0) || (dev->load[i].onWhichSys > 3)){
 			continue;
 		}
 		p = dev->load[i].pload;
@@ -504,11 +507,15 @@ void UpdateCuttedInfo(DEVINFO* dev, uint8 no_sys, uint8 vl){
 		//负荷未投运不处理
 		if (dev->load[i].alive == false) continue;
 		//负荷在系统1或系统2中切除，且系统状态不符合则不处理
-		if ((no_sys == dev->load[i].onWhichSys) && ((vl & dev->load[i].voltagelevel)!= 0x0)){
-			prior = dev->load[i].prior;
-			if (dev->cutted_prior[prior - 1]){
-				dev->load[i].beCutted = true;
-			}
+		if ((dev->load[i].voltagelevel & vl) == 0x0){
+			continue;
+		}
+		if ((no_sys != 3)&&(dev->load[i].onWhichSys != no_sys)){
+			continue;
+		}
+		prior = dev->load[i].prior;
+		if (dev->cutted_prior[prior - 1]){
+			dev->load[i].beCutted = true;
 		}
 	}
 	return;
@@ -563,9 +570,7 @@ int RUN_TAC_NO1(DEVINFO* dev){
 	bool stat_action_200ms = false;
 	float xql, hjz;
 	xql = dev->P9591 - dev->P9572;
-	stat_action_200ms = ((dev->HWJ9591 || dev->HWJ9592) ||
-		((dev->HWJ9571 == 0) && (dev->HWJ9511 || dev->HWJ9572))) 
-		&& dev->Conn_S2;
+	stat_action_200ms = ((dev->HWJ9591 || dev->HWJ9592) || ((dev->HWJ9571 == 0) && (dev->HWJ9511 || dev->HWJ9572))) && dev->Conn_S2;
 	if (stat_action_200ms && xql > 0.0){
 		//更新策略输出部分参数
 //		dev->tac.tac_num = 1;
@@ -679,7 +684,7 @@ int RUN_TAC_NO4(DEVINFO* dev){
 		//形成优先级负荷信息
 		CalLoadInfoByPrior(dev, 2, 2);
 		//计算负荷切除信息
-		LoadCuttedByPxql(xql, dev->p_all_kq_s2, dev->p_40_kq_s2, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
+		LoadCuttedByPxql(xql, dev->p_kq_s2_66, dev->p_40_kq_s2_66, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//更新负荷切除信息
 		UpdateCuttedInfo(dev, 2, 2);
 		//输出策略结果
@@ -695,9 +700,11 @@ int RUN_TAC_NO5(DEVINFO* dev){
 	bool stat_action_200ms = false;
 	bool stat_action_200ms1 = false;
 	float xql, xql1, xql2, hjz;
-	stat_action_200ms = (dev->HWJ9511 || dev->HWJ9591) && (dev->HWJ9512 || dev->HWJ9592);
-	stat_action_200ms1 = (dev->HWJ9511 && dev->HWJ9591) && (dev->HWJ9512 && dev->HWJ9592);
-	if (stat_action_200ms1 && dev->HWJ9572 == 0){//9572停运
+	stat_action_200ms = ((dev->HWJ9511 || dev->HWJ9512) || (dev->HWJ9591 || dev->HWJ9512)
+						||(((dev->HWJ9511 || dev->HWJ9592) || (dev->HWJ9512 || dev->HWJ9591))&&(dev->HWJ9571 == 0)))
+						&& dev->HWJ9561 && dev->HWJ9562;
+	//stat_action_200ms1 = (dev->HWJ9511 && dev->HWJ9591) && (dev->HWJ9512 && dev->HWJ9592);
+	if (stat_action_200ms && (dev->HWJ9572 == 0)){//9572停运
 		xql1 = dev->P9591 - dev->P9572;
 		xql2 = dev->P9592 + dev->P9572;
 		//更新策略输出部分参数
@@ -769,8 +776,8 @@ int RUN_TAC_NO6(DEVINFO* dev){
 	bool stat_action_200ms1 = false;
 	float xql, xql1, xql2, hjz;
 	stat_action_200ms = ((dev->HWJ9591 || dev->HWJ9562) || ((dev->HWJ9571 == 0) && (dev->HWJ9511 || dev->HWJ9562))) && dev->HWJ9561;
-	stat_action_200ms1 = ((dev->HWJ9591 && dev->HWJ9562) || ((dev->HWJ9571 == 0) && (dev->HWJ9511 && dev->HWJ9562))) && dev->HWJ9561;
-	if (stat_action_200ms1 && dev->HWJ9572 == 0){//9572停运
+	//stat_action_200ms1 = ((dev->HWJ9591 && dev->HWJ9562) || ((dev->HWJ9571 == 0) && (dev->HWJ9511 && dev->HWJ9562))) && dev->HWJ9561;
+	if (stat_action_200ms && dev->HWJ9572 == 0){//9572停运
 		xql1 = dev->P9591 - dev->P9572;
 		xql2 = dev->P9562 + dev->P9572;
 		//更新策略输出部分参数
@@ -803,7 +810,7 @@ int RUN_TAC_NO6(DEVINFO* dev){
 		//形成优先级负荷信息
 		CalLoadInfoByPrior(dev, 2, 2);
 		//系统2计算负荷切除信息
-		LoadCuttedByPxql(xql2, dev->p_all_kq_s2, dev->p_40_kq_s2, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
+		LoadCuttedByPxql(xql2, dev->p_kq_s2_66, dev->p_40_kq_s2_66, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统2更新负荷切除信息
 		UpdateCuttedInfo(dev, 2, 2);
 		//输出策略结果
@@ -842,42 +849,42 @@ int RUN_TAC_NO7(DEVINFO* dev){
 	bool stat_action_200ms1 = false;
 	float xql, xql1, xql2, hjz;
 	stat_action_200ms = ((dev->HWJ9592 || dev->HWJ9561) || ((dev->HWJ9571 == 0) && (dev->HWJ9512 || dev->HWJ9561))) && dev->HWJ9562;
-	stat_action_200ms1 = ((dev->HWJ9592 && dev->HWJ9561) || ((dev->HWJ9571 == 0) && (dev->HWJ9512 && dev->HWJ9561))) && dev->HWJ9562;
-	if (stat_action_200ms1 && dev->HWJ9572 == 0){//9572停运
+	//stat_action_200ms1 = ((dev->HWJ9592 && dev->HWJ9561) || ((dev->HWJ9571 == 0) && (dev->HWJ9512 && dev->HWJ9561))) && dev->HWJ9562;
+	if (stat_action_200ms && dev->HWJ9572 == 0){//9572停运
 		xql1 = dev->P9561 - dev->P9572;
 		xql2 = dev->P9592 + dev->P9572;
 		//更新策略输出部分参数
 //		dev->tac.tac_num = 7;
 		ClearCuttedTag(dev);
 		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
+		hjz = CutHJZXFirst(dev, 2);
 		strcpy(dev->tac.tac_num, "7-1");
 		dev->tac.tac_yq = xql1;
-		dev->tac.tac_kq = dev->p_all_kq_s1 + hjz;
+		dev->tac.tac_kq = dev->p_all_kq_s2 + hjz;
 		xql1 -= hjz;
 		//形成优先级负荷信息
 		CalLoadInfoByPrior(dev, 2, 3);
 		//系统1计算负荷切除信息
-		LoadCuttedByPxql(xql1, dev->p_all_kq_s1, dev->p_40_kq_s1, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
+		LoadCuttedByPxql(xql1, dev->p_all_kq_s2, dev->p_40_kq_s2, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统1更新负荷切除信息
-		UpdateCuttedInfo(dev, 1, 3);
+		UpdateCuttedInfo(dev, 2, 3);
 		//输出策略结果
 		ExportLoadOutput(dev);
 
 		//系统2故障
 		ClearCuttedTag(dev);
 		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 2);
+		hjz = CutHJZXFirst(dev, 1);
 		strcpy(dev->tac.tac_num, "7-2");
 		dev->tac.tac_yq = xql2;
-		dev->tac.tac_kq = dev->p_all_kq_s2 + hjz;
+		dev->tac.tac_kq = dev->p_kq_s1_66 + hjz;
 		xql2 -= hjz;
 		//形成优先级负荷信息
 		CalLoadInfoByPrior(dev, 1, 2);
 		//系统2计算负荷切除信息
-		LoadCuttedByPxql(xql2, dev->p_all_kq_s2, dev->p_40_kq_s2, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
+		LoadCuttedByPxql(xql2, dev->p_kq_s1_66, dev->p_40_kq_s1_66, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统2更新负荷切除信息
-		UpdateCuttedInfo(dev, 2, 2);
+		UpdateCuttedInfo(dev, 1, 2);
 		//输出策略结果
 		ExportLoadOutput(dev);
 	}else if (stat_action_200ms && dev->HWJ9572){//9572运行
@@ -914,8 +921,8 @@ int RUN_TAC_NO8(DEVINFO* dev){
 	bool stat_action_200ms1 = false;
 	float xql, xql1, xql2, hjz;
 	stat_action_200ms = (dev->HWJ9561 || dev->HWJ9562);
-	stat_action_200ms1 = (dev->HWJ9561 && dev->HWJ9562);
-	if (stat_action_200ms1 && (dev->HWJ9572 == 0)){//9572停运
+	//stat_action_200ms1 = (dev->HWJ9561 && dev->HWJ9562);
+	if (stat_action_200ms && (dev->HWJ9572 == 0)){//9572停运
 		xql1 = dev->P9561 - dev->P9572;
 		xql2 = dev->P9562 + dev->P9572;
 		//更新策略输出部分参数
@@ -994,12 +1001,12 @@ void run_tac_simulate(){
 	//RUN_TAC_NO1(&devdata);
 	//RUN_TAC_NO2(&devdata);
 	//RUN_TAC_NO3(&devdata);
-	RUN_TAC_NO4(&devdata);
+	//RUN_TAC_NO4(&devdata);
 	
-	exit(0);
-	RUN_TAC_NO5(&devdata);
-	RUN_TAC_NO6(&devdata);
+	//RUN_TAC_NO5(&devdata);
+	//RUN_TAC_NO6(&devdata);
 	RUN_TAC_NO7(&devdata);
+	exit(0);
 	RUN_TAC_NO8(&devdata);
 
 	return;

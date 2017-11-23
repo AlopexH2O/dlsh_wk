@@ -10,7 +10,9 @@ void main(){
 	ii.inf_num = 3;
 	ii.value = 23;
 
-	run_tac_simulate();
+	//run_tac_simulate();
+	int tmp = 23;
+	cout << sizeof(tmp) << endl;
 
 
 	return;

@@ -149,7 +149,7 @@ bool OutputDevInfo(string& outfile, DEVINFO* dev){
 }
 
 //读入装置文件
-bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev){
+bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev, FAULTINFO* fault){
 	bool res = false;
 	ifstream fstat;
 	ifstream fset;

@@ -6,8 +6,7 @@
 #include "systac.h"
 #include "DeviceSet.h"
 
-typedef unsigned int  int32;
-
+typedef unsigned int  uint32;
 
 //loadinfo struct
 typedef struct {
@@ -90,6 +89,27 @@ typedef struct {
 	uint8 S2_35kV_B2;
 }DEVINFO;
 
+//faultinfo
 
+typedef struct {
+	//事故跳闸
+	uint8 T9511;//1#变高跳闸
+	uint8 T9512;//2#变高跳闸
+	uint8 T9561;//1#变低跳闸
+	uint8 T9562;//2#变低跳闸
+	uint8 T9572;//66kV母联跳闸
+	uint8 T9591;//出线1跳闸
+	uint8 T9592;//出线2跳闸
+
+	//频率降低控制
+	uint8 FT_KGZ_S1;//开关站系统1频率下降
+	uint8 FT_KGZ_S2;//开关站系统2频率下降
+	uint8 FT_EKY_S1;//二空压系统1频率下降
+	uint8 FT_EKY_S2;//二空压系统2频率下降
+	uint8 FT_CH3_S1;//三催化系统1频率下降
+	uint8 FT_CH3_S2;//三催化系统2频率下降
+	uint8 FT_CH4_S1;//四催化系统1频率下降
+	uint8 FT_CH4_S2;//四催化系统2频率下降
+}FAULTINFO;
 
 #endif

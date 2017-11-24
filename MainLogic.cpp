@@ -355,9 +355,6 @@ void CalLoadStatics(DEVINFO* dev){
 
 			//统计各个系统下面的负荷情况，需要考虑的问题是：系统1跳入孤网，需不需要切与系统12均相连的负荷。
 			//目前按照只切完全孤网的系统负荷
-#ifdef _DEBUG
-				cout << "load_no: " << i + 1 << " " << p << " " << int(uSys) << " " << int(prior) << " " << int(vl) << endl;
-#endif
 
 			//处于系统1下 -- 默认统计只要跟系统1联网的所有负荷，即onWhichSys = 1 | 3
 			if ((uSys & 0x1) != 0x0){
@@ -391,8 +388,11 @@ void ClearCuttedTag(DEVINFO* dev){
 	}
 }
 
-bool CheckAfterFault(uint8 tz, uint8 hwj){
-	return (tz || (hwj == 0x0));
+bool TWJ(uint8 tz, uint8 hwj){
+	return ((tz!=0x0) || (hwj == 0x0));
+}
+bool HWJ(uint8 tz, uint8 hwj){
+	return ((tz==0x0) && (hwj != 0x0));
 }
 
 //根据要求形成负荷优先级信息
@@ -605,13 +605,13 @@ int RUN_TAC_NO1(DEVINFO* dev){
 
 	return triggered;
 }
-
 int RUN_TAC_NO1_FAULT(DEVINFO* dev, FAULTINFO* fault){
 	int triggered = 0;
 	bool stat_action_200ms = false;
 	bool stat_action = false;
 	float xql, hjz;
 	xql = dev->P9591 - dev->P9572;
+
 	//故障前状态满足
 	stat_action_200ms = ((dev->HWJ9591 || dev->HWJ9592) || ((dev->HWJ9571 == 0) && (dev->HWJ9511 || dev->HWJ9572))) && dev->Conn_S2;
 	//故障状态满足
@@ -649,6 +649,7 @@ int RUN_TAC_NO2(DEVINFO* dev){
 	bool stat_action_200ms = false;
 	float xql, hjz;
 	xql = dev->P9561 - dev->P9572;
+
 
 	stat_action_200ms = (dev->HWJ9561 || dev->HWJ9572) && dev->Conn_S2;
 	if (stat_action_200ms && xql > 0.0){
@@ -923,13 +924,14 @@ int RUN_TAC_NO5_FAULT(DEVINFO* dev, FAULTINFO* fault){
 	bool stat_action_200ms = false;
 	bool stat_action = false;
 	float xql, xql1, xql2, hjz;
+
 	stat_action_200ms = ((dev->HWJ9511 || dev->HWJ9512) || (dev->HWJ9591 || dev->HWJ9512)
 		||(((dev->HWJ9511 || dev->HWJ9592) || (dev->HWJ9512 || dev->HWJ9591))&&(dev->HWJ9571 == 0)))
 		&& dev->HWJ9561 && dev->HWJ9562;
-	stat_action = ((CheckAfterFault(fault->T9511, dev->HWJ9511) && CheckAfterFault(fault->T9512, dev->HWJ9512))||
-		          (CheckAfterFault(fault->T9591, dev->HWJ9591) && CheckAfterFault(fault->T9592, dev->HWJ9592))||
-				  (((CheckAfterFault(fault->T9511, dev->HWJ9511) && CheckAfterFault(fault->T9592, dev->HWJ9592))||
-				  (CheckAfterFault(fault->T9512, dev->HWJ9512) && CheckAfterFault(fault->T9591, dev->HWJ9591))) && (dev->HWJ9571 == 0x0))) &&
+	stat_action = ((TWJ(fault->T9511, dev->HWJ9511) && TWJ(fault->T9512, dev->HWJ9512))||
+		          (TWJ(fault->T9591, dev->HWJ9591) && TWJ(fault->T9592, dev->HWJ9592))||
+				  (((TWJ(fault->T9511, dev->HWJ9511) && TWJ(fault->T9592, dev->HWJ9592))||
+				  (TWJ(fault->T9512, dev->HWJ9512) && TWJ(fault->T9591, dev->HWJ9591))) && (dev->HWJ9571 == 0x0))) &&
 				  dev->HWJ9561 && dev->HWJ9562;
 
 
@@ -1072,10 +1074,10 @@ int RUN_TAC_NO6_FAULT(DEVINFO* dev, FAULTINFO* fault){
 	bool stat_action_200ms = false;
 	bool stat_action = false;
 	float xql, xql1, xql2, hjz;
-	
+
 	stat_action_200ms = ((dev->HWJ9591 || dev->HWJ9562) || ((dev->HWJ9571 == 0) && (dev->HWJ9511 || dev->HWJ9562))) && dev->HWJ9561;
-	stat_action = ((CheckAfterFault(fault->T9591, dev->HWJ9591) && CheckAfterFault(fault->T9562, dev->HWJ9562))||
-			      (CheckAfterFault(fault->T9511, dev->HWJ9511) && CheckAfterFault(fault->T9562, dev->HWJ9562) && (dev->HWJ9571 == 0x0))) && dev->HWJ9561;
+	stat_action = ((TWJ(fault->T9591, dev->HWJ9591) && TWJ(fault->T9562, dev->HWJ9562))||
+			      (TWJ(fault->T9511, dev->HWJ9511) && TWJ(fault->T9562, dev->HWJ9562) && (dev->HWJ9571 == 0x0))) && dev->HWJ9561;
 
 
 	if (stat_action_200ms && stat_action && dev->HWJ9572 == 0){//9572停运
@@ -1115,7 +1117,7 @@ int RUN_TAC_NO6_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		UpdateCuttedInfo(dev, 2, 2);
 		//输出策略结果
 		ExportLoadOutput(dev);
-	}else if (stat_action_200ms && dev->HWJ9572){//9572运行
+	}else if (stat_action_200ms && stat_action && dev->HWJ9572){//9572运行
 		triggered++;
 		xql = dev->P9591 + dev->P9592;
 		//更新策略输出部分参数
@@ -1191,7 +1193,7 @@ int RUN_TAC_NO7(DEVINFO* dev){
 //		dev->tac.tac_num = 7;
 		ClearCuttedTag(dev);
 		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
+		hjz = CutHJZXFirst(dev, 3);
 		strcpy(dev->tac.tac_num, "7-3");
 		dev->tac.tac_yq = xql;
 		dev->tac.tac_kq = dev->p_all_kq + hjz;
@@ -1216,9 +1218,10 @@ int RUN_TAC_NO7_FAULT(DEVINFO* dev, FAULTINFO* fault){
 	bool stat_action_200ms = false;
 	bool stat_action = false;
 	float xql, xql1, xql2, hjz;
+
 	stat_action_200ms = ((dev->HWJ9592 || dev->HWJ9561) || ((dev->HWJ9571 == 0) && (dev->HWJ9512 || dev->HWJ9561))) && dev->HWJ9562;
-	stat_action = ((CheckAfterFault(fault->T9592, dev->HWJ9592) && CheckAfterFault(fault->T9561, dev->HWJ9561))||
-				  (CheckAfterFault(fault->T9512, dev->HWJ9512) && CheckAfterFault(fault->T9561, dev->HWJ9561) && (dev->HWJ9571 == 0x0))) && dev->HWJ9562;
+	stat_action = ((TWJ(fault->T9592, dev->HWJ9592) && TWJ(fault->T9561, dev->HWJ9561))||
+				  (TWJ(fault->T9512, dev->HWJ9512) && TWJ(fault->T9561, dev->HWJ9561) && (dev->HWJ9571 == 0x0))) && dev->HWJ9562;
 
 	if (stat_action_200ms && stat_action && dev->HWJ9572 == 0){//9572停运
 		triggered++;
@@ -1256,14 +1259,14 @@ int RUN_TAC_NO7_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		UpdateCuttedInfo(dev, 1, 2);
 		//输出策略结果
 		ExportLoadOutput(dev);
-	}else if (stat_action_200ms && dev->HWJ9572){//9572运行
+	}else if (stat_action_200ms && stat_action && dev->HWJ9572){//9572运行
 		triggered++;
 		xql = dev->P9592 + dev->P9561;
 		//更新策略输出部分参数
 		//		dev->tac.tac_num = 7;
 		ClearCuttedTag(dev);
 		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
+		hjz = CutHJZXFirst(dev, 3);
 		CalPKqFault(dev, fault, 3, 3);
 		strcpy(dev->tac.tac_num, "7-3");
 		dev->tac.tac_yq = xql;
@@ -1290,6 +1293,7 @@ int RUN_TAC_NO8(DEVINFO* dev){
 	bool stat_action_200ms = false;
 	bool stat_action_200ms1 = false;
 	float xql, xql1, xql2, hjz;
+
 	stat_action_200ms = (dev->HWJ9561 || dev->HWJ9562);
 	//stat_action_200ms1 = (dev->HWJ9561 && dev->HWJ9562);
 	if (stat_action_200ms && (dev->HWJ9572 == 0)){//9572停运
@@ -1359,8 +1363,9 @@ int RUN_TAC_NO8_FAULT(DEVINFO* dev, FAULTINFO* fault){
 	bool stat_action_200ms = false;
 	bool stat_action = false;
 	float xql, xql1, xql2, hjz;
+
 	stat_action_200ms = (dev->HWJ9561 || dev->HWJ9562);
-	stat_action = CheckAfterFault(fault->T9561, dev->HWJ9561) && CheckAfterFault(fault->T9562, dev->HWJ9562);
+	stat_action = TWJ(fault->T9561, dev->HWJ9561) && TWJ(fault->T9562, dev->HWJ9562);
 	if (stat_action_200ms && stat_action && (dev->HWJ9572 == 0)){//9572停运
 		xql1 = dev->P9561 - dev->P9572;
 		xql2 = dev->P9562 + dev->P9572;
@@ -1384,7 +1389,7 @@ int RUN_TAC_NO8_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//系统2故障
 		ClearCuttedTag(dev);
 		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
+		hjz = CutHJZXFirst(dev, 2);
 		CalPKqFault(dev, fault, 2, 2);
 		strcpy(dev->tac.tac_num, "8-2");
 		dev->tac.tac_yq = xql2;
@@ -1397,14 +1402,14 @@ int RUN_TAC_NO8_FAULT(DEVINFO* dev, FAULTINFO* fault){
 
 		//输出策略结果
 		ExportLoadOutput(dev);
-	}else if (stat_action_200ms && dev->HWJ9572){//9572运行
+	}else if (stat_action_200ms && stat_action && dev->HWJ9572){//9572运行
 		triggered++;
 		xql = dev->P9562 + dev->P9561;
 		//更新策略输出部分参数
 		//		dev->tac.tac_num = 8;
 		ClearCuttedTag(dev);
 		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
+		hjz = CutHJZXFirst(dev, 3);
 		CalPKqFault(dev, fault, 3, 2);
 		strcpy(dev->tac.tac_num, "8-3");
 		dev->tac.tac_yq = xql;
@@ -1462,6 +1467,20 @@ void SetFault(FAULTINFO* fault, uint32 ft){
 	return;
 }
 
+//根据系统故障及开关位置运行情况推测系统互联情况
+void CheckSysConn(DEVINFO* dev, FAULTINFO* fault){
+	bool s1, s2;
+	s1 = (HWJ(fault->T9511, dev->HWJ9511) || (HWJ(fault->T9512, dev->HWJ9512) && dev->HWJ9571))
+		&& HWJ(fault->T9591, dev->HWJ9591) && HWJ(fault->T9561, dev->HWJ9561);
+	s2 = (HWJ(fault->T9512, dev->HWJ9512) || (HWJ(fault->T9511, dev->HWJ9511) && dev->HWJ9571))
+		&& HWJ(fault->T9592, dev->HWJ9592) && HWJ(fault->T9562, dev->HWJ9562);
+	dev->Conn_S1 = uint8(s1 && TWJ(fault->T9572, dev->HWJ9572));
+	dev->Conn_S2 = uint8(s2 && TWJ(fault->T9572, dev->HWJ9572));
+	dev->Conn_S1S2 = uint8((s1 && HWJ(fault->T9572, dev->HWJ9572)) || (s2 && HWJ(fault->T9572, dev->HWJ9572)));
+	return;
+}
+
+
 //根据故障频率降低计算可切功率
 void CalPKqFault(DEVINFO*dev, FAULTINFO* fault, uint8 sys, uint8 vl){
 	uint8 prior;
@@ -1515,6 +1534,9 @@ void CalPKqFault(DEVINFO*dev, FAULTINFO* fault, uint8 sys, uint8 vl){
 		dev->p_all_kq += p;
 		under40 ? dev->p_40_kq += p : dev->p_40_kq += 0.0;
 		dev->p_prior[prior - 1] += p;//该优先级负荷累加
+#ifdef _DEBUG
+		cout << i << " - " << int(prior) << " - " << p << endl;
+#endif
 	}
 	return;
 }
@@ -1528,17 +1550,42 @@ void run_tac_simulate(){
 	ReadDevInfo(&devdata, &faultdata);
 	//3. 处理负荷信息
 	HandleLoadSys(&devdata);	
+	//4. 计算故障后系统互联
+	CheckSysConn(&devdata, &faultdata);
+	if(devdata.Conn_S1S2) return;//系统12互联且联网，则不计算相应策略
+
 	//CalLoadStatics(&devdata);
+#ifdef _DEBUG
+	cout << "开关运行" << endl;
+	cout <<"9511:" << int(devdata.HWJ9511) << int(faultdata.T9511)<< endl;
+	cout <<"9512:" << int(devdata.HWJ9512) << int(faultdata.T9512)<< endl
+		 <<"9591:" << int(devdata.HWJ9591) << int(faultdata.T9591)<< endl
+		 <<"9592:" << int(devdata.HWJ9592) << int(faultdata.T9592)<< endl
+		 <<"9561:" << int(devdata.HWJ9561) << int(faultdata.T9561)<< endl
+		 <<"9562:" << int(devdata.HWJ9562) << int(faultdata.T9562)<< endl
+		 <<"9572:" << int(devdata.HWJ9572) << int(faultdata.T9572)<< endl
+		 <<"9571:" << int(devdata.HWJ9571) << endl;
+	cout << "频率下降模拟：" << endl;
+	cout << "开关站系统1：" << int(faultdata.FT_KGZ_S1) << endl
+		 << "开关站系统2：" << int(faultdata.FT_KGZ_S2) << endl
+		 << "二空压系统1：" << int(faultdata.FT_EKY_S1) << endl
+		 << "二空压系统2：" << int(faultdata.FT_EKY_S2) << endl
+		 << "三催化系统1：" << int(faultdata.FT_CH3_S1) << endl
+		 << "三催化系统2：" << int(faultdata.FT_CH3_S2) << endl
+		 << "四催化系统1：" << int(faultdata.FT_CH4_S1) << endl
+		 << "四催化系统2：" << int(faultdata.FT_CH4_S2) << endl;
+#endif
 
 	//4. 策略计算
-	RUN_TAC_NO1_FAULT(&devdata,&faultdata);
-	RUN_TAC_NO2_FAULT(&devdata,&faultdata);
-	RUN_TAC_NO3_FAULT(&devdata,&faultdata);
-	RUN_TAC_NO4_FAULT(&devdata,&faultdata);
-	RUN_TAC_NO5_FAULT(&devdata,&faultdata);
-	RUN_TAC_NO6_FAULT(&devdata,&faultdata);
-	RUN_TAC_NO7_FAULT(&devdata,&faultdata);
-	RUN_TAC_NO8_FAULT(&devdata,&faultdata);
+	int trigg = 0;
+	trigg = RUN_TAC_NO1_FAULT(&devdata,&faultdata);
+	trigg = RUN_TAC_NO2_FAULT(&devdata,&faultdata);
+	trigg = RUN_TAC_NO3_FAULT(&devdata,&faultdata);
+	trigg = RUN_TAC_NO4_FAULT(&devdata,&faultdata);
+	trigg = RUN_TAC_NO5_FAULT(&devdata,&faultdata);
+	trigg = RUN_TAC_NO6_FAULT(&devdata,&faultdata);
+	trigg = RUN_TAC_NO7_FAULT(&devdata,&faultdata);
+	trigg = RUN_TAC_NO8_FAULT(&devdata,&faultdata);
 
 	return;
 }

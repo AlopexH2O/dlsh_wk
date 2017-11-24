@@ -3,7 +3,7 @@
 #include "TestCase.h"
 using namespace std;
 
-bool OutputDevInfo(string& outfile, DEVINFO* dev){
+bool OutputDevInfo(string& outfile, DEVINFO* dev, FAULTINFO* fault){
 	bool res = false;
 	ofstream fout;
 	fout.open(outfile, ios::out);
@@ -142,8 +142,24 @@ bool OutputDevInfo(string& outfile, DEVINFO* dev){
 	fout << "===============================定值======================================"<< endl
 		<< "频稳欠切功率定值：" << dev->Load_Prior[63].value << endl;
 
-
-	fout.close();
+	fout << "===============================故障信息==================================" << endl
+		 << "9511:" << int(fault->T9511) << endl
+		 << "9512:" << int(fault->T9512) << endl
+		 << "9591:" << int(fault->T9591) << endl
+		 << "9592:" << int(fault->T9592) << endl
+		 << "9561:" << int(fault->T9561) << endl
+		 << "9562:" << int(fault->T9562) << endl
+		 << "开关站系统1："<< int(fault->FT_KGZ_S1) << endl
+		 << "开关站系统2："<< int(fault->FT_KGZ_S2) << endl
+		 << "二空压系统1："<< int(fault->FT_EKY_S1) << endl
+		 << "二空压系统2："<< int(fault->FT_EKY_S2) << endl
+		 << "三催化系统1："<< int(fault->FT_CH3_S1) << endl
+		 << "三催化系统2："<< int(fault->FT_CH3_S2) << endl
+		 << "四催化系统1："<< int(fault->FT_CH4_S1) << endl
+		 << "四催化系统2："<< int(fault->FT_CH4_S2) << endl;
+		 
+		 
+		 fout.close();
 
 	return res;
 }
@@ -668,6 +684,34 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev, FAULTINFO
 	int stcoden = 0;
 
 	while (fset >> s){
+		if(s == "石化变故障状态:"){
+			fset >> value;
+			int tmp = atoi(value.c_str());
+			fault->T9511 = uint8(tmp & 0x1);
+			fault->T9512 = uint8((tmp >> 1) & 0x1);
+			fault->T9591 = uint8((tmp >> 2) & 0x1);
+			fault->T9561 = uint8((tmp >> 3) & 0x1);
+			fault->T9592 = uint8((tmp >> 4) & 0x1);
+			fault->T9562 = uint8((tmp >> 5) & 0x1);
+			fault->T9572 = uint8((tmp >> 6) & 0x1);			
+			continue;
+		}
+
+		if(s == "模拟站故障频率:"){
+			fset >> value;
+			int tmp = atoi(value.c_str());
+			fault->FT_KGZ_S1 = uint8(tmp & 0x1);
+			fault->FT_KGZ_S2 = uint8((tmp >> 1) & 0x1);
+			fault->FT_EKY_S1 = uint8((tmp >> 2) & 0x1);
+			fault->FT_EKY_S2 = uint8((tmp >> 3) & 0x1);
+			fault->FT_CH3_S1 = uint8((tmp >> 4) & 0x1);
+			fault->FT_CH3_S2 = uint8((tmp >> 5) & 0x1);
+			fault->FT_CH4_S1 = uint8((tmp >> 6) & 0x1);			
+			fault->FT_CH4_S2 = uint8((tmp >> 7) & 0x1);			
+			continue;
+		}
+
+
 		if(s == "开关站线路01优先级:"){
 			fset >> value;
 			dev->Load_Prior[0].value = atof(value.c_str());
@@ -1224,7 +1268,7 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev, FAULTINFO
 
 	fset.close();
 
-	if (!OutputDevInfo(string("tmp.log"), dev)){
+	if (!OutputDevInfo(string("tmp.log"), dev, fault)){
 		exit(0);
 	}
 	res = true;

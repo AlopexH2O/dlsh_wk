@@ -89,4 +89,7 @@ void SetSysFault(DEVINFO* dev, FAULTINFO* fault);
 //根据故障频率降低计算可切功率
 void CalPKqFault(DEVINFO*dev, FAULTINFO* fault, uint8 sys, uint8 vl);
 
+//根据系统故障及开关位置运行情况推测系统互联情况
+void CheckSysConn(DEVINFO* dev, FAULTINFO* fault);
+
 #endif

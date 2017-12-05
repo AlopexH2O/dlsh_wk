@@ -2,7 +2,7 @@
 #define DEVICE_DEF_H 
 
 //outside common header file
-#include "simulator_define.h"
+#include "../include/simulator_define.h"
 #include "systac.h"
 #include "DeviceSet.h"
 
@@ -37,9 +37,9 @@ typedef struct {
 	InputItem Load_Conn_CH4[LINE_NUM_CH4];
 	InputItem Load_Conn_SHZ[LINE_NUM_SHZ];
 
-	//out
-	OutputItem LoadOutput[LOAD_P_NUM + 4];//增加输出化机双线、化总双线的切除情况
-	TacOutput  tac;
+	//output
+	OutputItem LoadOutput[TACOUT_NUM][LOAD_P_NUM + 4];//增加输出化机双线、化总双线的切除情况
+	TacOutput  tac[TACOUT_NUM];
 	//sys
 	LOADINFO load[LOAD_P_NUM+4];//load element,增加化机双线和华总双线的负荷情况 
 	float p_qq_setting;//频率欠切控制定值

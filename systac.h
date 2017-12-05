@@ -4,12 +4,13 @@
 #ifndef SYSTAC_H
 #define SYSTAC_H
 
-#include "simulator_define.h"
+#include "../include/simulator_define.h"
 
 
 typedef void (*DATA_HANDLER)(const char* station_code,InputItem *input,uint8 data_num,void *env);
 typedef void (*TAC_HANDLER)( const char* station_code,TacOutput *output,uint8 data_num,void *env);
 
+extern "C"{
 //输入回调函数
 void data_register(DATA_HANDLER data_handler,void *env); //env参数传递给DATA_HANDLER中的env
 
@@ -18,5 +19,6 @@ void result_register(TAC_HANDLER tac_handler,void *env); //env参数传递给TAC_HAND
 
 //动态库策略模拟函数
 void run_tac_simulate();
+};
 
 #endif

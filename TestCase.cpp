@@ -1,12 +1,14 @@
 #include <fstream>
+#include <ostream>
 #include <iostream>
+#include <string.h>
 #include "TestCase.h"
 using namespace std;
 
-bool OutputDevInfo(string& outfile, DEVINFO* dev, FAULTINFO* fault){
+bool OutputDevInfo(const string& outfile, DEVINFO* dev, FAULTINFO* fault){
 	bool res = false;
-	ofstream fout;
-	fout.open(outfile, ios::out);
+	fstream fout;
+	fout.open(outfile.c_str(), ios::out);
 
 	if (!fout.is_open()){
 		cout << "Error: Failed to write in " << outfile << endl;
@@ -143,12 +145,13 @@ bool OutputDevInfo(string& outfile, DEVINFO* dev, FAULTINFO* fault){
 		<< "频稳欠切功率定值：" << dev->Load_Prior[63].value << endl;
 
 	fout << "===============================故障信息==================================" << endl
-		 << "9511:" << int(fault->T9511) << endl
-		 << "9512:" << int(fault->T9512) << endl
-		 << "9591:" << int(fault->T9591) << endl
-		 << "9592:" << int(fault->T9592) << endl
-		 << "9561:" << int(fault->T9561) << endl
-		 << "9562:" << int(fault->T9562) << endl
+		 << "9511:" << int(dev->HWJ9511) << "\t" << int(fault->T9511) << endl
+		 << "9512:" << int(dev->HWJ9512) << "\t" << int(fault->T9512) << endl
+		 << "9591:" << int(dev->HWJ9591) << "\t" << int(fault->T9591) << endl
+		 << "9592:" << int(dev->HWJ9592) << "\t" << int(fault->T9592) << endl
+		 << "9561:" << int(dev->HWJ9561) << "\t" << int(fault->T9561) << endl
+		 << "9562:" << int(dev->HWJ9562) << "\t" << int(fault->T9562) << endl
+		 << "9572:" << int(dev->HWJ9572) << "\t" << int(fault->T9572) << endl
 		 << "开关站系统1："<< int(fault->FT_KGZ_S1) << endl
 		 << "开关站系统2："<< int(fault->FT_KGZ_S2) << endl
 		 << "二空压系统1："<< int(fault->FT_EKY_S1) << endl
@@ -165,13 +168,13 @@ bool OutputDevInfo(string& outfile, DEVINFO* dev, FAULTINFO* fault){
 }
 
 //读入装置文件
-bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev, FAULTINFO* fault){
+bool ReadTestCaseFile(const string& inf_stat, const string& inf_set, DEVINFO* dev, FAULTINFO* fault){
 	bool res = false;
-	ifstream fstat;
-	ifstream fset;
-	fstat.open(inf_stat, ios::in);
-	fset.open(inf_set, ios::in);
-	if (!fstat.is_open() || !fset.is_open()){
+	fstream fstat;
+	//fstream fset;
+	fstat.open(inf_stat.c_str(), ios::in);
+	//fset.open(inf_set.c_str(), ios::in);
+	if (!fstat.is_open()){
 		cout << "Error: Failed in Opening file!" << endl;
 		return res;
 	}
@@ -682,11 +685,24 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev, FAULTINFO
 
 	int stcode = 0;
 	int stcoden = 0;
+	FILE* fset = fopen(inf_set.c_str(), "r");
+	if (fset == NULL){
+		cout << "Error in reading file " << inf_set << endl;
+		return false;
+	}
 
-	while (fset >> s){
-		if(s == "石化变故障状态:"){
-			fset >> value;
-			int tmp = atoi(value.c_str());
+	char ss[128] = "";
+	float ff;
+	int   tmp;
+
+	while (!feof(fset)){
+		fscanf(fset, "%s", ss);
+
+		
+		if(!strcmp(ss, "石化变故障状态:")){
+			fscanf(fset, "%x", &tmp);
+			//fset >> value;
+			//int tmp = atoi(value.c_str());
 			fault->T9511 = uint8(tmp & 0x1);
 			fault->T9512 = uint8((tmp >> 1) & 0x1);
 			fault->T9591 = uint8((tmp >> 2) & 0x1);
@@ -697,9 +713,11 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev, FAULTINFO
 			continue;
 		}
 
-		if(s == "模拟站故障频率:"){
-			fset >> value;
-			int tmp = atoi(value.c_str());
+		if(!strcmp(ss, "模拟站故障频率:")){
+		//if(s == "模拟站故障频率:"){
+			fscanf(fset, "%x", &tmp);
+			//fset >> value;
+			//int tmp = atoi(value.c_str());
 			fault->FT_KGZ_S1 = uint8(tmp & 0x1);
 			fault->FT_KGZ_S2 = uint8((tmp >> 1) & 0x1);
 			fault->FT_EKY_S1 = uint8((tmp >> 2) & 0x1);
@@ -711,554 +729,569 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev, FAULTINFO
 			continue;
 		}
 
-
-		if(s == "开关站线路01优先级:"){
-			fset >> value;
-			dev->Load_Prior[0].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路01优先级:")){
+//		if(s == "开关站线路01优先级:"){
+			fscanf(fset, "%f", &ff);
+			//fset >> value;
+			dev->Load_Prior[0].value = ff;
 			continue;
 		}
-		if(s == "开关站线路02优先级:"){
-			fset >> value;
-			dev->Load_Prior[1].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路02优先级:")){
+//		if(s == "开关站线路02优先级:"){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[1].value = ff;
 			continue;
 		}		
-		if(s == "开关站线路03优先级:"){
-			fset >> value;
-			dev->Load_Prior[2].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路03优先级:")){
+//		if(s == "开关站线路03优先级:"){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[2].value = ff;
 			continue;
 		}		
-		if(s == "开关站线路04优先级:"){
-			fset >> value;
-			dev->Load_Prior[3].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路04优先级:")){
+//		if(s == "开关站线路04优先级:"){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[3].value = ff;
 			continue;
 		}	
-		if(s == "开关站线路05优先级:"){
-			fset >> value;
-			dev->Load_Prior[4].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路05优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[4].value = ff;
 			continue;
 		}	
-		if(s == "开关站线路06优先级:"){
-			fset >> value;
-			dev->Load_Prior[5].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路06优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[5].value = ff;
 			continue;
 		}	
-		if(s == "开关站线路07优先级:"){
-			fset >> value;
-			dev->Load_Prior[6].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路07优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[6].value = ff;
 			continue;
 		}	
-		if(s == "开关站线路08优先级:"){
-			fset >> value;
-			dev->Load_Prior[7].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路08优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[7].value = ff;
 			continue;
 		}	
-		if(s == "开关站线路09优先级:"){
-			fset >> value;
-			dev->Load_Prior[8].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路09优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[8].value = ff;
 			continue;
 		}
-		if(s == "开关站线路10优先级:"){
-			fset >> value;
-			dev->Load_Prior[9].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路10优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[9].value = ff;
 			continue;
 		}
-		if(s == "开关站线路11优先级:"){
-			fset >> value;
-			dev->Load_Prior[10].value = atof(value.c_str());
+		if(!strcmp(ss, "开关站线路11优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[10].value = ff;
 			continue;
 		}
-		if(s == "开关站线路12优先级:"){
-			fset >> value;
+		if(!strcmp(ss, "开关站线路12优先级:")){
+			fscanf(fset, "%f", &ff);
 			dev->Load_Prior[11].value = atof(value.c_str());
 			continue;
 		}
-		if(s == "二空压线路01优先级:"){
-			fset >> value;
-			dev->Load_Prior[12].value = atof(value.c_str());
+		if(!strcmp(ss, "二空压线路01优先级:")){
+//		if(s == "二空压线路01优先级:"){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[12].value = ff;
 			continue;
 		}
-		if(s == "二空压线路02优先级:"){
-			fset >> value;
-			dev->Load_Prior[13].value = atof(value.c_str());
+		if(!strcmp(ss, "二空压线路02优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[13].value = ff;
 			continue;
 		}
-		if(s == "二空压线路03优先级:"){
-			fset >> value;
-			dev->Load_Prior[14].value = atof(value.c_str());
+		if(!strcmp(ss, "二空压线路03优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[14].value = ff;
 			continue;
 		}
-		if(s == "二空压线路04优先级:"){
-			fset >> value;
-			dev->Load_Prior[15].value = atof(value.c_str());
+		if(!strcmp(ss, "二空压线路04优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[15].value = ff;
 			continue;
 		}
-		if(s == "二空压线路05优先级:"){
-			fset >> value;
-			dev->Load_Prior[16].value = atof(value.c_str());
+		if(!strcmp(ss, "二空压线路05优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[16].value = ff;
 			continue;
 		}
-		if(s == "二空压线路06优先级:"){
-			fset >> value;
-			dev->Load_Prior[17].value = atof(value.c_str());
+		if(!strcmp(ss, "二空压线路06优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[17].value = ff;
 			continue;
 		}
-		if(s == "二空压线路07优先级:"){
-			fset >> value;
-			dev->Load_Prior[18].value = atof(value.c_str());
+		if(!strcmp(ss, "二空压线路07优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[18].value = ff;
 			continue;
 		}
-		if(s == "二空压线路08优先级:"){
-			fset >> value;
-			dev->Load_Prior[19].value = atof(value.c_str());
+		if(!strcmp(ss, "二空压线路08优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[19].value = ff;
 			continue;
 		}
-		if(s == "二空压线路09优先级:"){
-			fset >> value;
-			dev->Load_Prior[20].value = atof(value.c_str());
+		if(!strcmp(ss, "二空压线路09优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[20].value = ff;
 			continue;
 		}
 		//三催化线路
-		if(s == "三催化线路01优先级:"){
-			fset >> value;
-			dev->Load_Prior[21].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路01优先级:")){
+			fscanf(fset, "%f", &ff);
+//		if(s == "三催化线路01优先级:"){
+//			fset >> value;
+			dev->Load_Prior[21].value = ff;
 			continue;
 		}
-		if(s == "三催化线路02优先级:"){
-			fset >> value;
-			dev->Load_Prior[22].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路02优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[22].value = ff;
 			continue;
 		}
-		if(s == "三催化线路03优先级:"){
-			fset >> value;
-			dev->Load_Prior[23].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路03优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[23].value = ff;
 			continue;
 		}
-		if(s == "三催化线路04优先级:"){
-			fset >> value;
-			dev->Load_Prior[24].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路04优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[24].value = ff;
 			continue;
 		}
-		if(s == "三催化线路05优先级:"){
-			fset >> value;
-			dev->Load_Prior[25].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路05优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[25].value = ff;
 			continue;
 		}
-		if(s == "三催化线路06优先级:"){
-			fset >> value;
-			dev->Load_Prior[26].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路06优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[26].value = ff;
 			continue;
 		}
-		if(s == "三催化线路07优先级:"){
-			fset >> value;
-			dev->Load_Prior[27].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路07优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[27].value = ff;
 			continue;
 		}
-		if(s == "三催化线路08优先级:"){
-			fset >> value;
-			dev->Load_Prior[28].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路08优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[28].value = ff;
 			continue;
 		}
-		if(s == "三催化线路09优先级:"){
-			fset >> value;
-			dev->Load_Prior[29].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路09优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[29].value = ff;
 			continue;
 		}
-		if(s == "三催化线路10优先级:"){
-			fset >> value;
-			dev->Load_Prior[30].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路10优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[30].value = ff;
 			continue;
 		}
-		if(s == "三催化线路11优先级:"){
-			fset >> value;
-			dev->Load_Prior[31].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路11优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[31].value = ff;
 			continue;
 		}
-		if(s == "三催化线路12优先级:"){
-			fset >> value;
-			dev->Load_Prior[32].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路12优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[32].value = ff;
 			continue;
 		}
-		if(s == "三催化线路13优先级:"){
-			fset >> value;
-			dev->Load_Prior[33].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路13优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[33].value = ff;
 			continue;
 		}
-		if(s == "三催化线路14优先级:"){
-			fset >> value;
-			dev->Load_Prior[34].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路14优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[34].value = ff;
 			continue;
 		}
-		if(s == "三催化线路15优先级:"){
-			fset >> value;
-			dev->Load_Prior[35].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路15优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[35].value = ff;
 			continue;
 		}
-		if(s == "三催化线路16优先级:"){
-			fset >> value;
-			dev->Load_Prior[36].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路16优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[36].value = ff;
 			continue;
 		}
-		if(s == "三催化线路17优先级:"){
-			fset >> value;
-			dev->Load_Prior[37].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路17优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[37].value = ff;
 			continue;
 		}
-		if(s == "三催化线路18优先级:"){
-			fset >> value;
-			dev->Load_Prior[38].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路18优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[38].value = ff;
 			continue;
 		}
-		if(s == "三催化线路19优先级:"){
-			fset >> value;
-			dev->Load_Prior[39].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路19优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[39].value = ff;
 			continue;
 		}
-		if(s == "三催化线路20优先级:"){
-			fset >> value;
-			dev->Load_Prior[40].value = atof(value.c_str());
+		if(!strcmp(ss, "三催化线路20优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[40].value = ff;
 			continue;
 		}
 		//四催化
-		if(s == "四催化三蒸馏线路01优先级:"){
-			fset >> value;
-			dev->Load_Prior[41].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路01优先级:")){
+			fscanf(fset, "%f", &ff);
+//		if(s == "四催化三蒸馏线路01优先级:"){
+//			fset >> value;
+			dev->Load_Prior[41].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路02优先级:"){
-			fset >> value;
-			dev->Load_Prior[43].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路02优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[43].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路03优先级:"){
-			fset >> value;
-			dev->Load_Prior[43].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路03优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[43].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路04优先级:"){
-			fset >> value;
-			dev->Load_Prior[44].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路04优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[44].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路05优先级:"){
-			fset >> value;
-			dev->Load_Prior[45].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路05优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[45].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路06优先级:"){
-			fset >> value;
-			dev->Load_Prior[46].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路06优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[46].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路07优先级:"){
-			fset >> value;
-			dev->Load_Prior[47].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路07优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[47].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路08优先级:"){
-			fset >> value;
-			dev->Load_Prior[48].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路08优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[48].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路09优先级:"){
-			fset >> value;
-			dev->Load_Prior[49].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路09优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[49].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路10优先级:"){
-			fset >> value;
-			dev->Load_Prior[50].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路10优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[50].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路11优先级:"){
-			fset >> value;
-			dev->Load_Prior[51].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路11优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[51].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路12优先级:"){
-			fset >> value;
-			dev->Load_Prior[52].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路12优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[52].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路13优先级:"){
-			fset >> value;
-			dev->Load_Prior[53].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路13优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[53].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路14优先级:"){
-			fset >> value;
-			dev->Load_Prior[54].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路14优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[54].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路15优先级:"){
-			fset >> value;
-			dev->Load_Prior[55].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路15优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[55].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路16优先级:"){
-			fset >> value;
-			dev->Load_Prior[56].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路16优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[56].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路17优先级:"){
-			fset >> value;
-			dev->Load_Prior[57].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路17优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[57].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路18优先级:"){
-			fset >> value;
-			dev->Load_Prior[58].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路18优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[58].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路19优先级:"){
-			fset >> value;
-			dev->Load_Prior[59].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路19优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[59].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路20优先级:"){
-			fset >> value;
-			dev->Load_Prior[60].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路20优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[60].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路21优先级:"){
-			fset >> value;
-			dev->Load_Prior[61].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路21优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[61].value = ff;
 			continue;
 		}
-		if(s == "四催化三蒸馏线路22优先级:"){
-			fset >> value;
-			dev->Load_Prior[62].value = atof(value.c_str());
+		if(!strcmp(ss, "四催化三蒸馏线路22优先级:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[62].value = ff;
 			continue;
 		}
-		if(s == "频稳欠切功率定值:"){
-			fset >> value;
-			dev->Load_Prior[63].value = atof(value.c_str());
+//		if(s == "频稳欠切功率定值:"){
+		if(!strcmp(ss, "频稳欠切功率定值:")){
+			fscanf(fset, "%f", &ff);
+			dev->Load_Prior[63].value = ff;
 			continue;
 		}
-		if(s == "母线归属状态:"){//母线归属状态默认是9571开关状态
-			fset >> value;
-			dev->Load_Conn_SHZ[0].value = atof(value.c_str());
+//		if(s == "母线归属状态:"){//母线归属状态默认是9571开关状态
+		if(!strcmp(ss, "母线归属状态:")){
+			fscanf(fset, "%x", &tmp);
+			dev->Load_Conn_SHZ[0].value = float((tmp >> 12) & 0x1);
 			continue;
 		}
 
 		
-		if(s == "模拟站M试验:"){
-			fset >> value;
-			stcode = atoi(value.c_str());
+//		if(s == "模拟站M试验:"){
+//			fset >> value;
+		if(!strcmp(ss, "模拟站M试验:")){
+			fscanf(fset, "%d", &tmp);
+			stcode = tmp;
 			continue;
 		}
 
-		if(s == "执行站M负荷1归属:"){
-			fset >> value;
+//		if(s == "执行站M负荷1归属:"){
+//			fset >> value;
+		if(!strcmp(ss, "执行站M负荷1归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcode == 1){//开关站
-				dev->Load_Conn_KGZ[0].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[0].value = ff;
 			}else if (stcode == 2){//二空压
-				dev->Load_Conn_EKY[0].value = atof(value.c_str());
+				dev->Load_Conn_EKY[0].value = ff;
 			}else if (stcode == 3){//三催化
-				dev->Load_Conn_CH3[0].value = atof(value.c_str());
+				dev->Load_Conn_CH3[0].value = ff;
 			}else if (stcode == 4){//三催化
-				dev->Load_Conn_CH4[0].value = atof(value.c_str());
+				dev->Load_Conn_CH4[0].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站M负荷2归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站M负荷2归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcode == 1){//开关站
-				dev->Load_Conn_KGZ[1].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[1].value = ff;
 			}else if (stcode == 2){//二空压
-				dev->Load_Conn_EKY[1].value = atof(value.c_str());
+				dev->Load_Conn_EKY[1].value = ff;
 			}else if (stcode == 3){//三催化
-				dev->Load_Conn_CH3[1].value = atof(value.c_str());
+				dev->Load_Conn_CH3[1].value = ff;
 			}else if (stcode == 4){//三催化
-				dev->Load_Conn_CH4[1].value = atof(value.c_str());
+				dev->Load_Conn_CH4[1].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站M负荷3归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站M负荷3归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcode == 1){//开关站
-				dev->Load_Conn_KGZ[2].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[2].value = ff;
 			}else if (stcode == 2){//二空压
-				dev->Load_Conn_EKY[2].value = atof(value.c_str());
+				dev->Load_Conn_EKY[2].value = ff;
 			}else if (stcode == 3){//三催化
-				dev->Load_Conn_CH3[2].value = atof(value.c_str());
+				dev->Load_Conn_CH3[2].value = ff;
 			}else if (stcode == 4){//三催化
-				dev->Load_Conn_CH4[2].value = atof(value.c_str());
+				dev->Load_Conn_CH4[2].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站M负荷4归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站M负荷4归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcode == 1){//开关站
-				dev->Load_Conn_KGZ[3].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[3].value = ff;
 			}else if (stcode == 2){//二空压
-				dev->Load_Conn_EKY[3].value = atof(value.c_str());
+				dev->Load_Conn_EKY[3].value = ff;
 			}else if (stcode == 3){//三催化
-				dev->Load_Conn_CH3[3].value = atof(value.c_str());
+				dev->Load_Conn_CH3[3].value = ff;
 			}else if (stcode == 4){//三催化
-				dev->Load_Conn_CH4[3].value = atof(value.c_str());
+				dev->Load_Conn_CH4[3].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站M负荷5归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站M负荷5归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcode == 1){//开关站
-				dev->Load_Conn_KGZ[4].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[4].value = ff;
 			}else if (stcode == 2){//二空压
-				dev->Load_Conn_EKY[4].value = atof(value.c_str());
+				dev->Load_Conn_EKY[4].value = ff;
 			}else if (stcode == 3){//三催化
-				dev->Load_Conn_CH3[4].value = atof(value.c_str());
+				dev->Load_Conn_CH3[4].value = ff;
 			}else if (stcode == 4){//三催化
-				dev->Load_Conn_CH4[4].value = atof(value.c_str());
+				dev->Load_Conn_CH4[4].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站M负荷6归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站M负荷6归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcode == 1){//开关站
-				dev->Load_Conn_KGZ[5].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[5].value = ff;
 			}else if (stcode == 2){//二空压
-				dev->Load_Conn_EKY[5].value = atof(value.c_str());
+				dev->Load_Conn_EKY[5].value = ff;
 			}else if (stcode == 3){//三催化
-				dev->Load_Conn_CH3[5].value = atof(value.c_str());
+				dev->Load_Conn_CH3[5].value = ff;
 			}else if (stcode == 4){//三催化
-				dev->Load_Conn_CH4[5].value = atof(value.c_str());
+				dev->Load_Conn_CH4[5].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站M负荷7归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站M负荷7归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcode == 1){//开关站
-				dev->Load_Conn_KGZ[6].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[6].value = ff;
 			}else if (stcode == 2){//二空压
-				dev->Load_Conn_EKY[6].value = atof(value.c_str());
+				dev->Load_Conn_EKY[6].value = ff;
 			}else if (stcode == 3){//三催化
-				dev->Load_Conn_CH3[6].value = atof(value.c_str());
+				dev->Load_Conn_CH3[6].value = ff;
 			}else if (stcode == 4){//三催化
-				dev->Load_Conn_CH4[6].value = atof(value.c_str());
+				dev->Load_Conn_CH4[6].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站M负荷8归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站M负荷8归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcode == 1){//开关站
-				dev->Load_Conn_KGZ[7].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[7].value = ff;
 			}else if (stcode == 2){//二空压
-				dev->Load_Conn_EKY[7].value = atof(value.c_str());
+				dev->Load_Conn_EKY[7].value = ff;
 			}else if (stcode == 3){//三催化
-				dev->Load_Conn_CH3[7].value = atof(value.c_str());
+				dev->Load_Conn_CH3[7].value = ff;
 			}else if (stcode == 4){//三催化
-				dev->Load_Conn_CH4[7].value = atof(value.c_str());
+				dev->Load_Conn_CH4[7].value = ff;
 			}
 			continue;
 		}
 
-		if(s == "模拟站N试验:"){
-			fset >> value;
-			stcoden = atoi(value.c_str());
+		if(!strcmp(ss, "模拟站N试验:")){
+			fscanf(fset, "%d", &tmp);
+			stcoden = tmp;
 			continue;
 		}
 
-		if(s == "执行站N负荷1归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站N负荷1归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcoden == 1){//开关站
-				dev->Load_Conn_KGZ[0].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[0].value = ff;
 			}else if (stcoden == 2){//二空压
-				dev->Load_Conn_EKY[0].value = atof(value.c_str());
+				dev->Load_Conn_EKY[0].value = ff;
 			}else if (stcoden == 3){//三催化
-				dev->Load_Conn_CH3[0].value = atof(value.c_str());
+				dev->Load_Conn_CH3[0].value = ff;
 			}else if (stcoden == 4){//三催化
-				dev->Load_Conn_CH4[0].value = atof(value.c_str());
+				dev->Load_Conn_CH4[0].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站N负荷2归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站N负荷2归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcoden == 1){//开关站
-				dev->Load_Conn_KGZ[1].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[1].value = ff;
 			}else if (stcoden == 2){//二空压
-				dev->Load_Conn_EKY[1].value = atof(value.c_str());
+				dev->Load_Conn_EKY[1].value = ff;
 			}else if (stcoden == 3){//三催化
-				dev->Load_Conn_CH3[1].value = atof(value.c_str());
+				dev->Load_Conn_CH3[1].value = ff;
 			}else if (stcoden == 4){//三催化
-				dev->Load_Conn_CH4[1].value = atof(value.c_str());
+				dev->Load_Conn_CH4[1].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站N负荷3归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站N负荷3归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcoden == 1){//开关站
-				dev->Load_Conn_KGZ[2].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[2].value = ff;
 			}else if (stcoden == 2){//二空压
-				dev->Load_Conn_EKY[2].value = atof(value.c_str());
+				dev->Load_Conn_EKY[2].value = ff;
 			}else if (stcoden == 3){//三催化
-				dev->Load_Conn_CH3[2].value = atof(value.c_str());
+				dev->Load_Conn_CH3[2].value = ff;
 			}else if (stcoden == 4){//三催化
-				dev->Load_Conn_CH4[2].value = atof(value.c_str());
+				dev->Load_Conn_CH4[2].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站N负荷4归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站N负荷4归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcoden == 1){//开关站
-				dev->Load_Conn_KGZ[3].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[3].value = ff;
 			}else if (stcoden == 2){//二空压
-				dev->Load_Conn_EKY[3].value = atof(value.c_str());
+				dev->Load_Conn_EKY[3].value = ff;
 			}else if (stcoden == 3){//三催化
-				dev->Load_Conn_CH3[3].value = atof(value.c_str());
+				dev->Load_Conn_CH3[3].value = ff;
 			}else if (stcoden == 4){//三催化
-				dev->Load_Conn_CH4[3].value = atof(value.c_str());
+				dev->Load_Conn_CH4[3].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站N负荷5归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站N负荷5归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcoden == 1){//开关站
-				dev->Load_Conn_KGZ[4].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[4].value = ff;
 			}else if (stcoden == 2){//二空压
-				dev->Load_Conn_EKY[4].value = atof(value.c_str());
+				dev->Load_Conn_EKY[4].value = ff;
 			}else if (stcoden == 3){//三催化
-				dev->Load_Conn_CH3[4].value = atof(value.c_str());
+				dev->Load_Conn_CH3[4].value = ff;
 			}else if (stcoden == 4){//三催化
-				dev->Load_Conn_CH4[4].value = atof(value.c_str());
+				dev->Load_Conn_CH4[4].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站N负荷6归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站N负荷6归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcoden == 1){//开关站
-				dev->Load_Conn_KGZ[5].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[5].value = ff;
 			}else if (stcoden == 2){//二空压
-				dev->Load_Conn_EKY[5].value = atof(value.c_str());
+				dev->Load_Conn_EKY[5].value = ff;
 			}else if (stcoden == 3){//三催化
-				dev->Load_Conn_CH3[5].value = atof(value.c_str());
+				dev->Load_Conn_CH3[5].value = ff;
 			}else if (stcoden == 4){//三催化
-				dev->Load_Conn_CH4[5].value = atof(value.c_str());
+				dev->Load_Conn_CH4[5].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站N负荷7归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站N负荷7归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcoden == 1){//开关站
-				dev->Load_Conn_KGZ[6].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[6].value = ff;
 			}else if (stcoden == 2){//二空压
-				dev->Load_Conn_EKY[6].value = atof(value.c_str());
+				dev->Load_Conn_EKY[6].value = ff;
 			}else if (stcoden == 3){//三催化
-				dev->Load_Conn_CH3[6].value = atof(value.c_str());
+				dev->Load_Conn_CH3[6].value = ff;
 			}else if (stcoden == 4){//三催化
-				dev->Load_Conn_CH4[6].value = atof(value.c_str());
+				dev->Load_Conn_CH4[6].value = ff;
 			}
 			continue;
 		}
-		if(s == "执行站N负荷8归属:"){
-			fset >> value;
+		if(!strcmp(ss, "执行站N负荷8归属:")){
+			fscanf(fset, "%f", &ff);
 			if (stcoden == 1){//开关站
-				dev->Load_Conn_KGZ[7].value = atof(value.c_str());
+				dev->Load_Conn_KGZ[7].value = ff;
 			}else if (stcoden == 2){//二空压
-				dev->Load_Conn_EKY[7].value = atof(value.c_str());
+				dev->Load_Conn_EKY[7].value = ff;
 			}else if (stcoden == 3){//三催化
-				dev->Load_Conn_CH3[7].value = atof(value.c_str());
+				dev->Load_Conn_CH3[7].value = ff;
 			}else if (stcoden == 4){//三催化
-				dev->Load_Conn_CH4[7].value = atof(value.c_str());
+				dev->Load_Conn_CH4[7].value = ff;
 			}
 			continue;
 		}
@@ -1266,9 +1299,9 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev, FAULTINFO
 
 	}
 
-	fset.close();
+	fclose(fset);
 
-	if (!OutputDevInfo(string("tmp.log"), dev, fault)){
+	if (!OutputDevInfo(string("./tmp/tmp.log"), dev, fault)){
 		exit(0);
 	}
 	res = true;
@@ -1276,14 +1309,14 @@ bool ReadTestCaseFile(string& inf_stat, string& inf_set, DEVINFO* dev, FAULTINFO
 }
 
 //输出策略结果
-bool SendTacFile(string& oufile, DEVINFO* dev){
+bool SendTacFile(const string& oufile, DEVINFO* dev){
 	bool res = false;
 	ofstream fout;
 	static int lll = 0;
 	if (lll == 0){
-		fout.open(oufile, ios::out);
+		fout.open(oufile.c_str(), ios::out);
 	}else{
-		fout.open(oufile, ios::out|ios::app);
+		fout.open(oufile.c_str(), ios::out|ios::app);
 	}
 	lll++;
 
@@ -1292,18 +1325,19 @@ bool SendTacFile(string& oufile, DEVINFO* dev){
 	}
 	res = true;
 	//输出策略动作结果
-	fout << endl;
-	fout << "=====================================================================" << endl;
-	fout << "tac_no:      " << dev->tac.tac_num << endl;
-	fout << "tac_yq:      " << dev->tac.tac_yq << endl;
-	fout << "tac_kq:      " << dev->tac.tac_kq << endl;
-	fout << "tac_pcutted: " << dev->tac.tac_pcutted << endl;
-	fout << "tac_ncutted: " << int(dev->tac.tac_ncutted) << endl;
-	fout << "== Loadinfo ==" << endl;
-	for (int i = 0;i < dev->tac.data_num;i++){
-		fout << "负荷编号- " << i+1 << " ---  " << (dev->tac.data[i].cutted ? "YES" : "NO") << " --- " << dev->load[i].pload << endl;
+	for (int i = 0;i < TACOUT_NUM;i++){
+		fout << endl;
+		fout << "=====================================================================" << endl;
+		fout << "tac_no:      " << dev->tac[i].tac_num << endl;
+		fout << "tac_yq:      " << dev->tac[i].tac_yq << endl;
+		fout << "tac_kq:      " << dev->tac[i].tac_kq << endl;
+		fout << "tac_sq:      " << dev->tac[i].tac_sq << endl;
+		fout << "== Loadinfo ==" << endl;
+		for (int j = 0;j < dev->tac[i].data_num;j++){
+			fout << "负荷编号- " << i+1 << " ---  " << (dev->tac[i].data[j].cutted ? "YES" : "NO") << endl;
+		}
+		fout << "=====================================================================" << endl;
 	}
-	fout << "=====================================================================" << endl;
 
 	fout.close();
 	return res;

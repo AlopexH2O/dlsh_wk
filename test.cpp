@@ -1,19 +1,19 @@
 #include <iostream>
-#include "simulator_define.h"
+#include "../include/simulator_define.h"
 #include "systac.h"
 using namespace  std;
 
 
-void main(){
-	InputItem ii;
-	ii.fun_num = 3;
-	ii.inf_num = 3;
-	ii.value = 23;
+int main(){
+
+#ifdef _DEBUG
+	cout << "Find _DEBUG" << endl;
+#else
+	cout << "NO _DEBUG" << endl;
+#endif
+
 
 	run_tac_simulate();
-	int tmp = 23;
-	cout << sizeof(tmp) << endl;
 
-
-	return;
+	return 0 ;
 }

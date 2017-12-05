@@ -4,12 +4,16 @@
 //#include "DeviceDef.h"
 #include "DevLogic.h"
 
+#include <iostream>
+#include <stdio.h>
+
 #ifdef _DEBUG
 #include "TestCase.h"
 #include <fstream>
-#include <iostream>
-using namespace std;
 #endif
+
+using namespace std;
+
 
 //定义全局变量
 static DEVINFO       devdata;	
@@ -23,14 +27,82 @@ static void*         env_send;
 void data_register(DATA_HANDLER data_handler,void *env){
 	func_read = data_handler;
 	env_read = env;
+#ifdef _LOG
+	printf("Log[func data_register]: data_handle = %x, env = %x\n", func_read, env_read);
+#endif
 	return;
 }
 //输出回调函数
 void result_register(TAC_HANDLER tac_handler,void *env){
 	func_send = tac_handler;
 	env_send = env;
+#ifdef _LOG
+	printf("Log[func result_register]: tac_handle = %x, env = %x\n", func_send, env_send);
+#endif
 	return;
 }
+
+void LogFuncReadInfo(InputItem *input,uint8 data_num){
+	cout << "Log[func LogFuncReadInfo]:" << endl;
+	for (int i = 0;i < data_num;i++){
+		cout << "fun_num = " << int(input[i].fun_num)  << " inf_num = " << int(input[i].inf_num) << " value = " << input[i].value << endl;
+	}
+	return;
+}
+void LogFuncSendInfo(TacOutput *output){
+	cout << "Log[func LogFuncSendInfo]:" << endl;
+	cout << "tac_num = " << output->tac_num << endl
+	     << "tac_yq  = " << output->tac_yq << endl
+	     << "tac_kq  = " << output->tac_kq << endl
+		 << "tac_sq  = " << output->tac_sq << endl;
+	for (int j = 0;j < output->data_num;j++){
+		cout << "fun_num = " << int(output->data[j].fun_num) <<  " inf_num = " << int(output->data[j].inf_num) << "\t cutted = " << int(output->data[j].cutted) << endl;
+	}
+	return;
+}
+void LogFuncSysdata(DEVINFO* dev){
+	printf("Log[Func LogFuncSysdata]:\n");
+	printf("Sys_P:\n");
+	LogFuncReadInfo(dev->Sys_P, SYS_P_NUM);
+	
+	printf("Load_P:\n");
+	LogFuncReadInfo(dev->Load_P, LOAD_P_NUM);
+	
+	printf("Load_Prior:\n");
+	LogFuncReadInfo(dev->Load_Prior, LOAD_P_NUM+1);
+
+	printf("Load_Conn:\n");
+	LogFuncReadInfo(dev->Load_Conn, LOAD_CONN_NUM);
+
+	printf("Sys_Stat:\n");
+	LogFuncReadInfo(dev->Sys_Stat, SYS_STAT_NUM);
+
+	printf("Load_Conn_KGZ:\n");
+	LogFuncReadInfo(dev->Load_Conn_KGZ, LINE_NUM_KGZ);
+
+	printf("Load_Conn_EKY:\n");
+	LogFuncReadInfo(dev->Load_Conn_EKY, LINE_NUM_EKY);
+
+	printf("Load_Conn_CH3:\n");
+	LogFuncReadInfo(dev->Load_Conn_CH3, LINE_NUM_CH3);
+
+	printf("Load_Conn_CH4:\n");
+	LogFuncReadInfo(dev->Load_Conn_CH4, LINE_NUM_CH4);
+
+	printf("Load_Conn_SHZ:\n");
+	LogFuncReadInfo(dev->Load_Conn_SHZ, LINE_NUM_SHZ);
+
+	printf("负荷信息:\n");
+	for (int i = 0;i < LOAD_P_NUM+4;i++){
+		printf("no = %d, fun = %d,inf = %d, pload = %f, prior = %d, sys = %d, alive = %d, vl = %d\n",
+			   i, dev->load[i].fun, dev->load[i].inf, dev->load[i].pload, dev->load[i].prior, dev->load[i].onWhichSys,
+			   dev->load[i].alive, dev->load[i].voltagelevel);
+	}
+	printf("频率欠切控制定值 = %f\n", dev->p_qq_setting);
+
+	return;
+}
+
 //初始化
 void Initialize(DEVINFO* dev, FAULTINFO* fault){
 	//系统模拟量
@@ -41,8 +113,8 @@ void Initialize(DEVINFO* dev, FAULTINFO* fault){
 	}
 	//负荷数据
 	for (int i = 0; i < LOAD_P_NUM; ++i){
-		dev->Load_P[i].fun_num = FUN_SYS_P[i];
-		dev->Load_P[i].inf_num = INF_SYS_P[i];
+		dev->Load_P[i].fun_num = FUN_LOAD_P[i];
+		dev->Load_P[i].inf_num = INF_LOAD_P[i];
 		dev->Load_Prior[i].fun_num = FUN_LOAD_PRIOR[i];
 		dev->Load_Prior[i].inf_num = INF_LOAD_PRIOR[i];
 		dev->Load_P[i].value = 0;
@@ -154,6 +226,8 @@ void Initialize(DEVINFO* dev, FAULTINFO* fault){
 
 	//初始化故障信息
 	InitializeFault(fault);
+	//初始化策略输出结果
+	//InitializeTacOutput(dev);
 	return;
 }
 //读取装置信息
@@ -161,32 +235,90 @@ void ReadDevInfo(DEVINFO* dev, FAULTINFO* fault){
 
 #ifndef _DEBUG
 	//读取系统模拟量信息
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Sys_p stcode = %s, InputItem = %x, data_num = %d\n", SHZZ, dev->Sys_P, SYS_P_NUM);
+	LogFuncReadInfo(dev->Sys_P, SYS_P_NUM);
+#endif
 	func_read(SHZZ,dev->Sys_P, SYS_P_NUM, env_read);
+
 	//读取负荷信息
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Load_P stcode = %s, InputItem = %x, data_num = %d\n", SHZZ, dev->Load_P, LOAD_P_NUM);
+	LogFuncReadInfo(dev->Load_P, LOAD_P_NUM);
+#endif
 	func_read(SHZZ,dev->Load_P, LOAD_P_NUM, env_read);
+
+
 	//读取优先级定值
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Load_Prior stcode = %s, InputItem = %x, data_num = %d\n", SHZZ, dev->Load_Prior, LOAD_P_NUM+1);
+	LogFuncReadInfo(dev->Load_Prior, LOAD_P_NUM+1);
+#endif
 	func_read(SHZZ,dev->Load_Prior, LOAD_P_NUM+1, env_read);
+
+
 	//读取系统连接状态
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Load_Conn stcode = %s, InputItem = %x, data_num = %d\n", SHZZ, dev->Load_Conn, LOAD_CONN_NUM);
+	LogFuncReadInfo(dev->Load_Conn, LOAD_CONN_NUM);
+#endif
 	func_read(SHZZ,dev->Load_Conn, LOAD_CONN_NUM, env_read);
+
 	//读取系统开关运行状态
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Sys_Stat before stcode = %s, InputItem = %x, data_num = %d\n", SHZZ, dev->Sys_Stat, SYS_STAT_NUM);
+	LogFuncReadInfo(dev->Sys_Stat, SYS_STAT_NUM);
+#endif
 	func_read(SHZZ,dev->Sys_Stat, SYS_STAT_NUM, env_read);
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Sys_Stat after stcode = %s, InputItem = %x, data_num = %d\n", SHZZ, dev->Sys_Stat, SYS_STAT_NUM);
+	LogFuncReadInfo(dev->Sys_Stat, SYS_STAT_NUM);
+#endif
+
+
 
 	//开关站读取信息
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Load_Conn_KGZ stcode = %s, InputItem = %x, data_num = %d\n", KGZ, dev->Load_Conn_KGZ, LINE_NUM_KGZ);
+	LogFuncReadInfo(dev->Load_Conn_KGZ, LINE_NUM_KGZ);
+#endif
 	func_read(KGZ,dev->Load_Conn_KGZ, LINE_NUM_KGZ, env_read);
+
+
 	//二空压读取信息
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Load_Conn_EKY stcode = %s, InputItem = %x, data_num = %d\n", EKY, dev->Load_Conn_EKY, LINE_NUM_EKY);
+	LogFuncReadInfo(dev->Load_Conn_EKY, LINE_NUM_EKY);
+#endif
 	func_read(EKY,dev->Load_Conn_EKY, LINE_NUM_EKY, env_read);
+
 	//三催化读取信息
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Load_Conn_CH3 stcode = %s, InputItem = %x, data_num = %d\n", CH3, dev->Load_Conn_CH3, LINE_NUM_CH3);
+	LogFuncReadInfo(dev->Load_Conn_CH3, LINE_NUM_CH3);
+#endif
 	func_read(CH3,dev->Load_Conn_CH3, LINE_NUM_CH3, env_read);
+
 	//四催化读取信息
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Load_Conn_CH4 stcode = %s, InputItem = %x, data_num = %d\n", CH4, dev->Load_Conn_CH4, LINE_NUM_CH4);
+	LogFuncReadInfo(dev->Load_Conn_CH4, LINE_NUM_CH4);
+#endif
 	func_read(CH4,dev->Load_Conn_CH4, LINE_NUM_CH4, env_read);
+
 	//石化子读取信息
+#ifdef _LOG
+	printf("Log[func ReadDevInfo]: Load_Conn_SHZ stcode = %s, InputItem = %x, data_num = %d\n", SHZ, dev->Load_Conn_SHZ, LINE_NUM_SHZ);
+	LogFuncReadInfo(dev->Load_Conn_SHZ, LINE_NUM_SHZ);
+#endif
 	func_read(SHZ,dev->Load_Conn_SHZ, LINE_NUM_SHZ, env_read);
 
 	//故障信息接口备用
 
 #else
 	//从文件中读取系统状态
-	bool res = ReadTestCaseFile(std::string("C:\\Users\\zhengh.NR-RD\\Desktop\\大连石化项目\\XDC.sta"), std::string("C:\\Users\\zhengh.NR-RD\\Desktop\\大连石化项目\\XDC.set"), dev, fault);
+//	bool res = ReadTestCaseFile(std::string("C:\\Users\\zhengh.NR-RD\\Desktop\\大连石化项目\\XDC.sta"), std::string("C:\\Users\\zhengh.NR-RD\\Desktop\\大连石化项目\\XDC.set"), dev, fault);
+	bool res = ReadTestCaseFile(std::string("./tmp/XDC.sta"), std::string("./tmp/XDC.set"), dev, fault);
 	if (!res){
 		std::cout << "Error: Failed to ReadTestCaseFile!" << endl;
 		exit(0);
@@ -221,7 +353,7 @@ void ReadDevInfo(DEVINFO* dev, FAULTINFO* fault){
 	dev->S2_35kV_B2 = uint8(dev->Sys_Stat[14].value);
 
 	//9571开关信息
-	dev->HWJ9571 = uint8(dev->Load_Conn_SHZ[0].value) == 0 ? 1 : 0;
+	dev->HWJ9571 = uint8(dev->Load_Conn_SHZ[0].value);
 
 	//负荷数据处理
 	dev->p_qq_setting = dev->Load_Prior[LOAD_P_NUM].value;//频稳欠切功率定值
@@ -280,6 +412,9 @@ void ReadDevInfo(DEVINFO* dev, FAULTINFO* fault){
 }
 //处理负荷挂载系统状态
 void HandleLoadSys(DEVINFO* dev){
+#ifdef _LOG
+	cout << "Log[func HandleLoadSys]: running HandleLoadSys" << endl;
+#endif
 	uint8 temp, index;
 	uint8 stat1, stat2;
 
@@ -533,28 +668,41 @@ void UpdateCuttedInfo(DEVINFO* dev, uint8 no_sys, uint8 vl){
 
 
 //输出负荷切除信息
-void ExportLoadOutput(DEVINFO* dev){
+void ExportLoadOutput(DEVINFO* dev, int tac_index, char* tac_num, float yq, float kq){
 	float pcutted = 0.0;//负荷切除量
 	uint8 ncutted = 0;//负荷切除个数
+
+	strcpy(dev->tac[tac_index].tac_num, tac_num);
+	dev->tac[tac_index].tac_yq = yq;
+	dev->tac[tac_index].tac_kq = kq;
+
 	for (int i = 0; i < LOAD_P_NUM + 4; ++i){
-		dev->LoadOutput[i].fun_num = dev->load[i].fun;
-		dev->LoadOutput[i].inf_num = dev->load[i].inf;
-		dev->LoadOutput[i].cutted = dev->load[i].beCutted;
-		if (dev->LoadOutput[i].cutted){
+		//dev->LoadOutput[tac_index][i].fun_num = dev->load[i].fun;
+		//dev->LoadOutput[tac_index][i].inf_num = dev->load[i].inf;
+		dev->LoadOutput[tac_index][i].cutted = dev->load[i].beCutted;
+		if (dev->LoadOutput[tac_index][i].cutted){
 			pcutted += dev->load[i].pload;
 			ncutted++;
 		}
 	}
-	dev->tac.data = dev->LoadOutput;
-	dev->tac.data_num = LOAD_P_NUM + 4;
-	dev->tac.tac_pcutted = pcutted;
-	dev->tac.tac_ncutted = ncutted;
+	//dev->tac[tac_index].data = dev->LoadOutput[tac_index];
+	//dev->tac.data_num = LOAD_P_NUM + 4;
+	dev->tac[tac_index].tac_sq = pcutted;
+	//dev->tac.tac_pcutted = pcutted;
+	//dev->tac.tac_ncutted = ncutted;
+
+#ifdef _LOG
+	//输出策略输出信息
+	//LogFuncSendInfo(&(dev->tac[tac_index]));
+	LogFuncSendInfo(dev->tac + tac_index);
+#endif
 
 #ifndef _DEBUG
 	//输出切除信息
-	func_send(SHZZ,&(dev->tac), 1, env_send);
+	//func_send(SHZZ,&(dev->tac), 1, env_send);
 #else
-	bool res = SendTacFile(std::string(".\\tacoutfile.txt"), dev);
+//	bool res = SendTacFile(std::string(".\\tacoutfile.txt"), dev);
+	bool res = SendTacFile(std::string("./tmp/tacoutfile.txt"), dev);
 	if (!res){
 		std::cout<< "Error: Failed to SendTacFile!" << endl;
 	}
@@ -564,6 +712,9 @@ void ExportLoadOutput(DEVINFO* dev){
 }
 //首先切除化机双线，华总双线
 float CutHJZXFirst(DEVINFO* dev, uint8 sys){
+#ifdef _LOG
+	cout << "Log[func CutHJZXFirst]: running CutHJZXFirst" << endl;
+#endif
 	float res = 0;
 	for (int i = 0;i < 4;++i){
 		if (dev->load[LOAD_P_NUM + i].alive && ((dev->load[LOAD_P_NUM + i].onWhichSys & sys)!= 0x0) ){
@@ -575,37 +726,10 @@ float CutHJZXFirst(DEVINFO* dev, uint8 sys){
 }
 
 //策略1动作逻辑
-int RUN_TAC_NO1(DEVINFO* dev){
-	int triggered = 0;
-	bool stat_action_200ms = false;
-	float xql, hjz;
-	xql = dev->P9591 - dev->P9572;
-	stat_action_200ms = ((dev->HWJ9591 || dev->HWJ9592) || ((dev->HWJ9571 == 0) && (dev->HWJ9511 || dev->HWJ9572))) && dev->Conn_S2;
-	if (stat_action_200ms && xql > 0.0){
-		//更新策略输出部分参数
-//		dev->tac.tac_num = 1;
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
-
-		strcpy(dev->tac.tac_num, "1-1");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq_s1 + hjz;
-		
-		xql -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 1, 3);
-		//计算负荷切除信息
-		LoadCuttedByPxql(xql, dev->p_all_kq_s1, dev->p_40_kq_s1, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//更新负荷切除信息
-		UpdateCuttedInfo(dev, 1, 3);
-		//输出策略结果
-		ExportLoadOutput(dev);
-	}
-
-	return triggered;
-}
 int RUN_TAC_NO1_FAULT(DEVINFO* dev, FAULTINFO* fault){
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO1_FAULT]: running RUN_TAC_NO1_FAULT" << endl;
+#endif
 	int triggered = 0;
 	bool stat_action_200ms = false;
 	bool stat_action = false;
@@ -617,6 +741,11 @@ int RUN_TAC_NO1_FAULT(DEVINFO* dev, FAULTINFO* fault){
 	//故障状态满足
 	stat_action = (((fault->T9591 || (dev->HWJ9591 == 0x0)) && (fault->T9572 || (dev->HWJ9572 == 0x0))) ||
 				  ((dev->HWJ9571 == 0x0) && (fault->T9511 || (dev->HWJ9511 == 0x0)) && (fault->T9572 || (dev->HWJ9572 == 0x0)))) && dev->Conn_S2;
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO1_FAULT]: stat_action_200ms = " << int(stat_action_200ms) << endl
+		 << "                             stat_action       = " << int(stat_action) << endl
+		 << "                             xql               = " << xql << endl;
+#endif
 	if (stat_action_200ms && stat_action && xql > 0.0){
 		triggered = 1;//置动作标志
 		//更新策略输出部分参数
@@ -626,9 +755,9 @@ int RUN_TAC_NO1_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		hjz = CutHJZXFirst(dev, 1);
 		CalPKqFault(dev, fault, 1, 3);//在系统1中35-66中切除
 
-		strcpy(dev->tac.tac_num, "1-1");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "1-1");
+		//dev->tac.tac_yq = xql;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 
 		xql -= hjz;
 		//计算负荷切除信息
@@ -636,7 +765,7 @@ int RUN_TAC_NO1_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//更新负荷切除信息
 		UpdateCuttedInfo(dev, 1, 3);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC1, "1-1", xql + hjz, dev->p_all_kq + hjz);
 	}
 
 	return triggered;
@@ -644,39 +773,10 @@ int RUN_TAC_NO1_FAULT(DEVINFO* dev, FAULTINFO* fault){
 
 
 //策略2动作逻辑
-int RUN_TAC_NO2(DEVINFO* dev){
-	int triggered = 0;
-	bool stat_action_200ms = false;
-	float xql, hjz;
-	xql = dev->P9561 - dev->P9572;
-
-
-	stat_action_200ms = (dev->HWJ9561 || dev->HWJ9572) && dev->Conn_S2;
-	if (stat_action_200ms && xql > 0.0){
-		//更新策略输出部分参数
-//		dev->tac.tac_num = 2;
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev,1);
-
-		strcpy(dev->tac.tac_num, "2-1");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_kq_s1_66 + hjz;
-
-		xql -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 1, 2);
-		//计算负荷切除信息
-		LoadCuttedByPxql(xql, dev->p_kq_s1_66, dev->p_40_kq_s1_66, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//更新负荷切除信息
-		UpdateCuttedInfo(dev, 1, 2);
-		//输出策略结果
-		ExportLoadOutput(dev);
-	}
-
-	return triggered;
-}
 int RUN_TAC_NO2_FAULT(DEVINFO* dev, FAULTINFO* fault){
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO2_FAULT]: running RUN_TAC_NO2_FAULT" << endl;
+#endif
 	int triggered = 0;
 	bool stat_action_200ms = false;
 	bool stat_action = false;
@@ -685,6 +785,11 @@ int RUN_TAC_NO2_FAULT(DEVINFO* dev, FAULTINFO* fault){
 
 	stat_action_200ms = (dev->HWJ9561 || dev->HWJ9572) && dev->Conn_S2;
 	stat_action = (fault->T9561 || (dev->HWJ9561 == 0x0)) && (fault->T9572 || (dev->HWJ9572 == 0x0)) && dev->Conn_S2;
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO2_FAULT]: stat_action_200ms = " << int(stat_action_200ms) << endl
+		 << "                             stat_action       = " << int(stat_action) << endl
+		 << "                             xql               = " << xql << endl;
+#endif
 	if (stat_action_200ms && stat_action && xql > 0.0){
 		triggered = 1;
 		//更新策略输出部分参数
@@ -694,9 +799,9 @@ int RUN_TAC_NO2_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		hjz = CutHJZXFirst(dev,1);
 		CalPKqFault(dev, fault, 1, 2);
 
-		strcpy(dev->tac.tac_num, "2-1");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "2-1");
+		//dev->tac.tac_yq = xql;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 
 		xql -= hjz;
 		//计算负荷切除信息
@@ -704,44 +809,17 @@ int RUN_TAC_NO2_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//更新负荷切除信息
 		UpdateCuttedInfo(dev, 1, 2);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC2, "2-1", xql + hjz, dev->p_all_kq + hjz);
 	}
 
 	return triggered;
 }
 
 //策略3动作逻辑
-int RUN_TAC_NO3(DEVINFO* dev){
-	int triggered = 0;
-	bool stat_action_200ms = false;
-	float xql, hjz;
-	xql = dev->P9592 + dev->P9572;
-
-	stat_action_200ms = ((dev->HWJ9592 || dev->HWJ9572) || ((dev->HWJ9571 == 0) && (dev->HWJ9512 || dev->HWJ9572))) && dev->Conn_S1;
-	if (stat_action_200ms && xql > 0.0){
-		//更新策略输出部分参数
-		ClearCuttedTag(dev);
-//		dev->tac.tac_num = 3;
-		hjz = CutHJZXFirst(dev,  2);
-
-		strcpy(dev->tac.tac_num, "3-1");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq_s2 + hjz;
-
-		xql -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 2, 3);
-		//计算负荷切除信息
-		LoadCuttedByPxql(xql, dev->p_all_kq_s2, dev->p_40_kq_s2, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//更新负荷切除信息
-		UpdateCuttedInfo(dev, 2, 3);
-		//输出策略结果
-		ExportLoadOutput(dev);
-	}
-
-	return triggered;
-}
 int RUN_TAC_NO3_FAULT(DEVINFO* dev, FAULTINFO* fault){
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO3_FAULT]: running RUN_TAC_NO3_FAULT" << endl;
+#endif
 	int triggered = 0;
 	bool stat_action_200ms = false;
 	bool stat_action = false;
@@ -751,6 +829,11 @@ int RUN_TAC_NO3_FAULT(DEVINFO* dev, FAULTINFO* fault){
 	stat_action_200ms = ((dev->HWJ9592 || dev->HWJ9572) || ((dev->HWJ9571 == 0) && (dev->HWJ9512 || dev->HWJ9572))) && dev->Conn_S1;
 	stat_action = (((fault->T9592 || (dev->HWJ9592 == 0x0)) && (fault->T9572 || (dev->HWJ9572 == 0x0))) ||
 				  ((dev->HWJ9571 == 0x0) && (fault->T9512 || (dev->HWJ9512 == 0x0)) && (fault->T9572 || (dev->HWJ9572 == 0x0)))) && dev->Conn_S1;
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO3_FAULT]: stat_action_200ms = " << int(stat_action_200ms) << endl
+		 << "                             stat_action       = " << int(stat_action) << endl
+		 << "                             xql               = " << xql << endl;
+#endif
 	if (stat_action_200ms && stat_action && xql > 0.0){
 		triggered++;
 		//更新策略输出部分参数
@@ -759,9 +842,9 @@ int RUN_TAC_NO3_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		hjz = CutHJZXFirst(dev,  2);
 		CalPKqFault(dev, fault, 2, 3);
 
-		strcpy(dev->tac.tac_num, "3-1");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "3-1");
+		//dev->tac.tac_yq = xql;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 
 		xql -= hjz;
 		//计算负荷切除信息
@@ -769,7 +852,7 @@ int RUN_TAC_NO3_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//更新负荷切除信息
 		UpdateCuttedInfo(dev, 2, 3);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC3, "3-1", xql + hjz, dev->p_all_kq + hjz);
 	}
 
 	return triggered;
@@ -777,38 +860,10 @@ int RUN_TAC_NO3_FAULT(DEVINFO* dev, FAULTINFO* fault){
 }
 
 //策略4动作逻辑
-int RUN_TAC_NO4(DEVINFO* dev){
-	int triggered = 0;
-	bool stat_action_200ms = false;
-	float xql, hjz;
-	xql = dev->P9562 + dev->P9572;
-
-	stat_action_200ms = (dev->HWJ9562 || dev->HWJ9572) && dev->Conn_S1;
-	if (stat_action_200ms && xql > 0.0){
-		//更新策略输出部分参数
-//		dev->tac.tac_num = 4;
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 2);
-
-		strcpy(dev->tac.tac_num, "4-1");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_kq_s2_66 + hjz;
-
-		xql -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 2, 2);
-		//计算负荷切除信息
-		LoadCuttedByPxql(xql, dev->p_kq_s2_66, dev->p_40_kq_s2_66, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//更新负荷切除信息
-		UpdateCuttedInfo(dev, 2, 2);
-		//输出策略结果
-		ExportLoadOutput(dev);
-	}
-
-	return triggered;
-}
 int RUN_TAC_NO4_FAULT(DEVINFO* dev, FAULTINFO* fault){
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO4_FAULT]: running RUN_TAC_NO4_FAULT" << endl;
+#endif
 	int triggered = 0;
 	bool stat_action_200ms = false;
 	bool stat_action = false;
@@ -817,6 +872,11 @@ int RUN_TAC_NO4_FAULT(DEVINFO* dev, FAULTINFO* fault){
 
 	stat_action_200ms = (dev->HWJ9562 || dev->HWJ9572) && dev->Conn_S1;
 	stat_action = (fault->T9562 || (dev->HWJ9562 == 0x0)) && (fault->T9572 || (dev->HWJ9572 == 0x0)) && dev->Conn_S1;
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO4_FAULT]: stat_action_200ms = " << int(stat_action_200ms) << endl
+		 << "                             stat_action       = " << int(stat_action) << endl
+		 << "                             xql               = " << xql << endl;
+#endif
 	if (stat_action_200ms && stat_action && xql > 0.0){
 		triggered++;
 		//更新策略输出部分参数
@@ -826,9 +886,9 @@ int RUN_TAC_NO4_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		hjz = CutHJZXFirst(dev, 2);
 		CalPKqFault(dev, fault, 2, 2);
 
-		strcpy(dev->tac.tac_num, "4-1");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "4-1");
+		//dev->tac.tac_yq = xql;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 
 		xql -= hjz;
 		//形成优先级负荷信息
@@ -838,7 +898,7 @@ int RUN_TAC_NO4_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//更新负荷切除信息
 		UpdateCuttedInfo(dev, 2, 2);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC4, "4-1", xql + hjz, dev->p_all_kq + hjz);
 	}
 
 	return triggered;
@@ -846,80 +906,10 @@ int RUN_TAC_NO4_FAULT(DEVINFO* dev, FAULTINFO* fault){
 }
 
 //策略5动作逻辑
-int RUN_TAC_NO5(DEVINFO* dev){
-	int triggered = 0;
-	bool stat_action_200ms = false;
-	bool stat_action_200ms1 = false;
-	float xql, xql1, xql2, hjz;
-	stat_action_200ms = ((dev->HWJ9511 || dev->HWJ9512) || (dev->HWJ9591 || dev->HWJ9512)
-						||(((dev->HWJ9511 || dev->HWJ9592) || (dev->HWJ9512 || dev->HWJ9591))&&(dev->HWJ9571 == 0)))
-						&& dev->HWJ9561 && dev->HWJ9562;
-	//stat_action_200ms1 = (dev->HWJ9511 && dev->HWJ9591) && (dev->HWJ9512 && dev->HWJ9592);
-	if (stat_action_200ms && (dev->HWJ9572 == 0)){//9572停运
-		xql1 = dev->P9591 - dev->P9572;
-		xql2 = dev->P9592 + dev->P9572;
-		//更新策略输出部分参数
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
-//		dev->tac.tac_num = 5;
-		strcpy(dev->tac.tac_num, "5-1");
-		dev->tac.tac_yq = xql1;
-		dev->tac.tac_kq = dev->p_all_kq_s1 + hjz;
-
-		xql1 -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 1, 3);
-		//系统1计算负荷切除信息
-		LoadCuttedByPxql(xql1, dev->p_all_kq_s1, dev->p_40_kq_s1, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//系统1更新负荷切除信息
-		UpdateCuttedInfo(dev, 1, 3);
-		//输出系统1切负荷信息 
-		ExportLoadOutput(dev);
-
-		//系统2故障
-		ClearCuttedTag(dev);
-		hjz = CutHJZXFirst(dev, 2);
-		strcpy(dev->tac.tac_num, "5-2");
-		dev->tac.tac_yq = xql2;
-		dev->tac.tac_kq = dev->p_all_kq_s2 + hjz;
-
-		xql2 -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 2, 3);
-		//系统2计算负荷切除信息
-		LoadCuttedByPxql(xql2, dev->p_all_kq_s2, dev->p_40_kq_s2, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//系统2更新负荷切除信息
-		UpdateCuttedInfo(dev, 2, 3);
-		//输出策略结果
-		ExportLoadOutput(dev);
-	}else if (stat_action_200ms && dev->HWJ9572){//9572运行
-		xql = dev->P9591 + dev->P9592;
-		//更新策略输出部分参数
-//		dev->tac.tac_num = 5;
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 3);
-
-		strcpy(dev->tac.tac_num, "5-3");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
-
-		xql -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 3, 3);
-		//全网计算负荷切除信息
-		LoadCuttedByPxql(xql, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//全网更新负荷切除信息
-		UpdateCuttedInfo(dev, 3, 3);
-		//输出策略结果
-		ExportLoadOutput(dev);
-
-	}
-
-	return triggered;
-}
 int RUN_TAC_NO5_FAULT(DEVINFO* dev, FAULTINFO* fault){
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO5_FAULT]: running RUN_TAC_NO5_FAULT" << endl;
+#endif
 	int triggered = 0;
 	bool stat_action_200ms = false;
 	bool stat_action = false;
@@ -934,6 +924,11 @@ int RUN_TAC_NO5_FAULT(DEVINFO* dev, FAULTINFO* fault){
 				  (TWJ(fault->T9512, dev->HWJ9512) && TWJ(fault->T9591, dev->HWJ9591))) && (dev->HWJ9571 == 0x0))) &&
 				  dev->HWJ9561 && dev->HWJ9562;
 
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO5_FAULT]: stat_action_200ms = " << int(stat_action_200ms) << endl
+		 << "                             stat_action       = " << int(stat_action) << endl
+		 << "                             HWJ9572           = " << int(dev->HWJ9572) << endl;
+#endif
 
 	if (stat_action_200ms && stat_action && (dev->HWJ9572 == 0)){//9572停运
 		triggered++;
@@ -945,31 +940,32 @@ int RUN_TAC_NO5_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		hjz = CutHJZXFirst(dev, 1);
 		CalPKqFault(dev,fault,1,3);
 		//		dev->tac.tac_num = 5;
-		strcpy(dev->tac.tac_num, "5-1");
-		dev->tac.tac_yq = xql1;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "5-1");
+		//dev->tac.tac_yq = xql1;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql1 -= hjz;
 		//系统1计算负荷切除信息
 		LoadCuttedByPxql(xql1, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统1更新负荷切除信息
 		UpdateCuttedInfo(dev, 1, 3);
 		//输出系统1切负荷信息 
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC5, "5-1", xql1 + hjz, dev->p_all_kq + hjz);
 
 		//系统2故障
 		ClearCuttedTag(dev);
 		hjz = CutHJZXFirst(dev, 2);
 		CalPKqFault(dev, fault, 2, 3);
-		strcpy(dev->tac.tac_num, "5-2");
-		dev->tac.tac_yq = xql2;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "5-2");
+		//dev->tac.tac_yq = xql2;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql2 -= hjz;
 		//系统2计算负荷切除信息
 		LoadCuttedByPxql(xql2, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统2更新负荷切除信息
 		UpdateCuttedInfo(dev, 2, 3);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC5+1, "5-2", xql2 + hjz, dev->p_all_kq + hjz);
+
 	}else if (stat_action_200ms && stat_action && dev->HWJ9572){//9572运行
 		triggered++;
 		xql = dev->P9591 + dev->P9592;
@@ -980,16 +976,16 @@ int RUN_TAC_NO5_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		hjz = CutHJZXFirst(dev, 3);
 		CalPKqFault(dev, fault, 3, 3);
 
-		strcpy(dev->tac.tac_num, "5-3");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "5-3");
+		//dev->tac.tac_yq = xql;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql -= hjz;
 		//全网计算负荷切除信息
 		LoadCuttedByPxql(xql, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//全网更新负荷切除信息
 		UpdateCuttedInfo(dev, 3, 3);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC5+2, "5-3", xql + hjz, dev->p_all_kq + hjz);
 
 	}
 
@@ -998,78 +994,10 @@ int RUN_TAC_NO5_FAULT(DEVINFO* dev, FAULTINFO* fault){
 }
 
 //策略6动作逻辑
-int RUN_TAC_NO6(DEVINFO* dev){
-	int triggered = 0;
-	bool stat_action_200ms = false;
-	bool stat_action_200ms1 = false;
-	float xql, xql1, xql2, hjz;
-	stat_action_200ms = ((dev->HWJ9591 || dev->HWJ9562) || ((dev->HWJ9571 == 0) && (dev->HWJ9511 || dev->HWJ9562))) && dev->HWJ9561;
-	//stat_action_200ms1 = ((dev->HWJ9591 && dev->HWJ9562) || ((dev->HWJ9571 == 0) && (dev->HWJ9511 && dev->HWJ9562))) && dev->HWJ9561;
-	if (stat_action_200ms && dev->HWJ9572 == 0){//9572停运
-		xql1 = dev->P9591 - dev->P9572;
-		xql2 = dev->P9562 + dev->P9572;
-		//更新策略输出部分参数
-//		dev->tac.tac_num = 6;
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
-		strcpy(dev->tac.tac_num, "6-1");
-		dev->tac.tac_yq = xql1;
-		dev->tac.tac_kq = dev->p_all_kq_s1 + hjz;
-
-		xql1 -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 1, 3);
-		//系统1计算负荷切除信息
-		LoadCuttedByPxql(xql1, dev->p_all_kq_s1, dev->p_40_kq_s1, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//系统1更新负荷切除信息
-		UpdateCuttedInfo(dev, 1, 3);
-		//输出策略结果
-		ExportLoadOutput(dev);
-		
-		//系统2故障
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 2);
-		strcpy(dev->tac.tac_num, "6-2");
-		dev->tac.tac_yq = xql2;
-		dev->tac.tac_kq = dev->p_all_kq_s2 + hjz;
-		xql2 -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 2, 2);
-		//系统2计算负荷切除信息
-		LoadCuttedByPxql(xql2, dev->p_kq_s2_66, dev->p_40_kq_s2_66, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//系统2更新负荷切除信息
-		UpdateCuttedInfo(dev, 2, 2);
-		//输出策略结果
-		ExportLoadOutput(dev);
-	}else if (stat_action_200ms && dev->HWJ9572){//9572运行
-		xql = dev->P9591 + dev->P9592;
-		//更新策略输出部分参数
-//		dev->tac.tac_num = 6;
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 3);
-		strcpy(dev->tac.tac_num, "6-3");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
-		xql -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 3, 3);
-		//全网计算负荷切除信息
-		LoadCuttedByPxql(xql, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//全网更新负荷切除信息
-		UpdateCuttedInfo(dev, 3, 3);
-
-
-		//输出策略结果
-		ExportLoadOutput(dev);
-
-	}
-
-	return triggered;
-}
 int RUN_TAC_NO6_FAULT(DEVINFO* dev, FAULTINFO* fault){
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO6_FAULT]: running RUN_TAC_NO6_FAULT" << endl;
+#endif
 	int triggered = 0;
 	bool stat_action_200ms = false;
 	bool stat_action = false;
@@ -1079,6 +1007,11 @@ int RUN_TAC_NO6_FAULT(DEVINFO* dev, FAULTINFO* fault){
 	stat_action = ((TWJ(fault->T9591, dev->HWJ9591) && TWJ(fault->T9562, dev->HWJ9562))||
 			      (TWJ(fault->T9511, dev->HWJ9511) && TWJ(fault->T9562, dev->HWJ9562) && (dev->HWJ9571 == 0x0))) && dev->HWJ9561;
 
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO6_FAULT]: stat_action_200ms = " << int(stat_action_200ms) << endl
+		 << "                             stat_action       = " << int(stat_action) << endl
+		 << "                             HWJ9572           = " << int(dev->HWJ9572) << endl;
+#endif
 
 	if (stat_action_200ms && stat_action && dev->HWJ9572 == 0){//9572停运
 		triggered++;
@@ -1090,16 +1023,16 @@ int RUN_TAC_NO6_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//先切除化机双线、华总双线
 		hjz = CutHJZXFirst(dev, 1);
 		CalPKqFault(dev,fault, 1, 3);
-		strcpy(dev->tac.tac_num, "6-1");
-		dev->tac.tac_yq = xql1;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "6-1");
+		//dev->tac.tac_yq = xql1;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql1 -= hjz;
 		//系统1计算负荷切除信息
 		LoadCuttedByPxql(xql1, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统1更新负荷切除信息
 		UpdateCuttedInfo(dev, 1, 3);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC6, "6-1", xql1 + hjz, dev->p_all_kq + hjz);
 
 		//系统2故障
 		ClearCuttedTag(dev);
@@ -1107,16 +1040,16 @@ int RUN_TAC_NO6_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		hjz = CutHJZXFirst(dev, 2);
 		CalPKqFault(dev, fault, 2, 2);
 
-		strcpy(dev->tac.tac_num, "6-2");
-		dev->tac.tac_yq = xql2;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "6-2");
+		//dev->tac.tac_yq = xql2;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql2 -= hjz;
 		//系统2计算负荷切除信息
 		LoadCuttedByPxql(xql2, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统2更新负荷切除信息
 		UpdateCuttedInfo(dev, 2, 2);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC6+1, "6-2", xql2 + hjz, dev->p_all_kq + hjz);
 	}else if (stat_action_200ms && stat_action && dev->HWJ9572){//9572运行
 		triggered++;
 		xql = dev->P9591 + dev->P9592;
@@ -1126,16 +1059,16 @@ int RUN_TAC_NO6_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//先切除化机双线、华总双线
 		hjz = CutHJZXFirst(dev, 3);
 		CalPKqFault(dev, fault, 3, 3);
-		strcpy(dev->tac.tac_num, "6-3");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "6-3");
+		//dev->tac.tac_yq = xql;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql -= hjz;
 		//全网计算负荷切除信息
 		LoadCuttedByPxql(xql, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//全网更新负荷切除信息
 		UpdateCuttedInfo(dev, 3, 3);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC6+2, "6-3", xql + hjz, dev->p_all_kq + hjz);
 
 	}
 
@@ -1143,77 +1076,10 @@ int RUN_TAC_NO6_FAULT(DEVINFO* dev, FAULTINFO* fault){
 }
 
 //策略7动作逻辑
-int RUN_TAC_NO7(DEVINFO* dev){
-	int triggered = 0;
-	bool stat_action_200ms = false;
-	bool stat_action_200ms1 = false;
-	float xql, xql1, xql2, hjz;
-	stat_action_200ms = ((dev->HWJ9592 || dev->HWJ9561) || ((dev->HWJ9571 == 0) && (dev->HWJ9512 || dev->HWJ9561))) && dev->HWJ9562;
-	//stat_action_200ms1 = ((dev->HWJ9592 && dev->HWJ9561) || ((dev->HWJ9571 == 0) && (dev->HWJ9512 && dev->HWJ9561))) && dev->HWJ9562;
-	if (stat_action_200ms && dev->HWJ9572 == 0){//9572停运
-		xql1 = dev->P9561 - dev->P9572;
-		xql2 = dev->P9592 + dev->P9572;
-		//更新策略输出部分参数
-//		dev->tac.tac_num = 7;
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 2);
-		strcpy(dev->tac.tac_num, "7-1");
-		dev->tac.tac_yq = xql1;
-		dev->tac.tac_kq = dev->p_all_kq_s2 + hjz;
-		xql1 -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 2, 3);
-		//系统1计算负荷切除信息
-		LoadCuttedByPxql(xql1, dev->p_all_kq_s2, dev->p_40_kq_s2, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//系统1更新负荷切除信息
-		UpdateCuttedInfo(dev, 2, 3);
-		//输出策略结果
-		ExportLoadOutput(dev);
-
-		//系统2故障
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
-		strcpy(dev->tac.tac_num, "7-2");
-		dev->tac.tac_yq = xql2;
-		dev->tac.tac_kq = dev->p_kq_s1_66 + hjz;
-		xql2 -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 1, 2);
-		//系统2计算负荷切除信息
-		LoadCuttedByPxql(xql2, dev->p_kq_s1_66, dev->p_40_kq_s1_66, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//系统2更新负荷切除信息
-		UpdateCuttedInfo(dev, 1, 2);
-		//输出策略结果
-		ExportLoadOutput(dev);
-	}else if (stat_action_200ms && dev->HWJ9572){//9572运行
-		xql = dev->P9592 + dev->P9561;
-		//更新策略输出部分参数
-//		dev->tac.tac_num = 7;
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 3);
-		strcpy(dev->tac.tac_num, "7-3");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
-		xql -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 3, 3);
-		//全网计算负荷切除信息
-		LoadCuttedByPxql(xql, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//全网更新负荷切除信息
-		UpdateCuttedInfo(dev, 3, 3);
-
-
-		//输出策略结果
-		ExportLoadOutput(dev);
-
-	}
-
-	return triggered;
-}
 int RUN_TAC_NO7_FAULT(DEVINFO* dev, FAULTINFO* fault){
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO7_FAULT]: running RUN_TAC_NO7_FAULT" << endl;
+#endif
 	int triggered = 0;
 	bool stat_action_200ms = false;
 	bool stat_action = false;
@@ -1222,6 +1088,11 @@ int RUN_TAC_NO7_FAULT(DEVINFO* dev, FAULTINFO* fault){
 	stat_action_200ms = ((dev->HWJ9592 || dev->HWJ9561) || ((dev->HWJ9571 == 0) && (dev->HWJ9512 || dev->HWJ9561))) && dev->HWJ9562;
 	stat_action = ((TWJ(fault->T9592, dev->HWJ9592) && TWJ(fault->T9561, dev->HWJ9561))||
 				  (TWJ(fault->T9512, dev->HWJ9512) && TWJ(fault->T9561, dev->HWJ9561) && (dev->HWJ9571 == 0x0))) && dev->HWJ9562;
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO7_FAULT]: stat_action_200ms = " << int(stat_action_200ms) << endl
+		 << "                             stat_action       = " << int(stat_action) << endl
+		 << "                             HWJ9572           = " << int(dev->HWJ9572) << endl;
+#endif
 
 	if (stat_action_200ms && stat_action && dev->HWJ9572 == 0){//9572停运
 		triggered++;
@@ -1233,32 +1104,32 @@ int RUN_TAC_NO7_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//先切除化机双线、华总双线
 		hjz = CutHJZXFirst(dev, 2);
 		CalPKqFault(dev, fault, 2, 3);
-		strcpy(dev->tac.tac_num, "7-1");
-		dev->tac.tac_yq = xql1;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "7-1");
+		//dev->tac.tac_yq = xql1;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql1 -= hjz;
 		//系统1计算负荷切除信息
 		LoadCuttedByPxql(xql1, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统1更新负荷切除信息
 		UpdateCuttedInfo(dev, 2, 3);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC7, "7-1", xql1 + hjz, dev->p_all_kq + hjz);
 
 		//系统2故障
 		ClearCuttedTag(dev);
 		//先切除化机双线、华总双线
 		hjz = CutHJZXFirst(dev, 1);
 		CalPKqFault(dev, fault, 1, 2);
-		strcpy(dev->tac.tac_num, "7-2");
-		dev->tac.tac_yq = xql2;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "7-2");
+		//dev->tac.tac_yq = xql2;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql2 -= hjz;
 		//系统2计算负荷切除信息
 		LoadCuttedByPxql(xql2, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统2更新负荷切除信息
 		UpdateCuttedInfo(dev, 1, 2);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC7+1, "7-2", xql2 + hjz, dev->p_all_kq + hjz);
 	}else if (stat_action_200ms && stat_action && dev->HWJ9572){//9572运行
 		triggered++;
 		xql = dev->P9592 + dev->P9561;
@@ -1268,9 +1139,9 @@ int RUN_TAC_NO7_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//先切除化机双线、华总双线
 		hjz = CutHJZXFirst(dev, 3);
 		CalPKqFault(dev, fault, 3, 3);
-		strcpy(dev->tac.tac_num, "7-3");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "7-3");
+		//dev->tac.tac_yq = xql;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql -= hjz;
 		//全网计算负荷切除信息
 		LoadCuttedByPxql(xql, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
@@ -1279,7 +1150,7 @@ int RUN_TAC_NO7_FAULT(DEVINFO* dev, FAULTINFO* fault){
 
 
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC7+2, "7-3", xql + hjz, dev->p_all_kq + hjz);
 
 	}
 
@@ -1288,77 +1159,10 @@ int RUN_TAC_NO7_FAULT(DEVINFO* dev, FAULTINFO* fault){
 }
 
 //策略8动作逻辑
-int RUN_TAC_NO8(DEVINFO* dev){
-	int triggered = 0;
-	bool stat_action_200ms = false;
-	bool stat_action_200ms1 = false;
-	float xql, xql1, xql2, hjz;
-
-	stat_action_200ms = (dev->HWJ9561 || dev->HWJ9562);
-	//stat_action_200ms1 = (dev->HWJ9561 && dev->HWJ9562);
-	if (stat_action_200ms && (dev->HWJ9572 == 0)){//9572停运
-		xql1 = dev->P9561 - dev->P9572;
-		xql2 = dev->P9562 + dev->P9572;
-		//更新策略输出部分参数
-//		dev->tac.tac_num = 8;
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
-		strcpy(dev->tac.tac_num, "8-1");
-		dev->tac.tac_yq = xql1;
-		dev->tac.tac_kq = dev->p_all_kq_s1 + hjz;
-		xql1 -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 1, 2);
-		//系统1计算负荷切除信息
-		LoadCuttedByPxql(xql1, dev->p_all_kq_s1, dev->p_40_kq_s1, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//系统1更新负荷切除信息
-		UpdateCuttedInfo(dev, 1, 2);
-		//输出策略结果
-		ExportLoadOutput(dev);
-
-		//系统2故障
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
-		strcpy(dev->tac.tac_num, "8-2");
-		dev->tac.tac_yq = xql2;
-		dev->tac.tac_kq = dev->p_all_kq_s2 + hjz;
-		xql2 -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 2, 2);
-		//系统2计算负荷切除信息
-		LoadCuttedByPxql(xql2, dev->p_all_kq_s2, dev->p_40_kq_s2, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//系统2更新负荷切除信息
-		UpdateCuttedInfo(dev, 2, 2);
-
-		//输出策略结果
-		ExportLoadOutput(dev);
-	}else if (stat_action_200ms && dev->HWJ9572){//9572运行
-		xql = dev->P9562 + dev->P9561;
-		//更新策略输出部分参数
-//		dev->tac.tac_num = 8;
-		ClearCuttedTag(dev);
-		//先切除化机双线、华总双线
-		hjz = CutHJZXFirst(dev, 1);
-		strcpy(dev->tac.tac_num, "8-3");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
-		xql -= hjz;
-		//形成优先级负荷信息
-		CalLoadInfoByPrior(dev, 3, 2);
-		//全网计算负荷切除信息
-		LoadCuttedByPxql(xql, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
-		//全网更新负荷切除信息
-		UpdateCuttedInfo(dev, 3, 2);
-		//输出策略结果
-		ExportLoadOutput(dev);
-
-	}
-
-	return triggered;
-}
 int RUN_TAC_NO8_FAULT(DEVINFO* dev, FAULTINFO* fault){
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO8_FAULT]: running RUN_TAC_NO8_FAULT" << endl;
+#endif
 	int triggered = 0;
 	bool stat_action_200ms = false;
 	bool stat_action = false;
@@ -1366,6 +1170,13 @@ int RUN_TAC_NO8_FAULT(DEVINFO* dev, FAULTINFO* fault){
 
 	stat_action_200ms = (dev->HWJ9561 || dev->HWJ9562);
 	stat_action = TWJ(fault->T9561, dev->HWJ9561) && TWJ(fault->T9562, dev->HWJ9562);
+
+#ifdef _LOG
+	cout << "Log[func RUN_TAC_NO8_FAULT]: stat_action_200ms = " << int(stat_action_200ms) << endl
+		 << "                             stat_action       = " << int(stat_action) << endl
+		 << "                             HWJ9572           = " << int(dev->HWJ9572) << endl;
+#endif
+
 	if (stat_action_200ms && stat_action && (dev->HWJ9572 == 0)){//9572停运
 		xql1 = dev->P9561 - dev->P9572;
 		xql2 = dev->P9562 + dev->P9572;
@@ -1375,33 +1186,33 @@ int RUN_TAC_NO8_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//先切除化机双线、华总双线
 		hjz = CutHJZXFirst(dev, 1);
 		CalPKqFault(dev, fault, 1, 2);
-		strcpy(dev->tac.tac_num, "8-1");
-		dev->tac.tac_yq = xql1;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "8-1");
+		//dev->tac.tac_yq = xql1;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql1 -= hjz;
 		//系统1计算负荷切除信息
 		LoadCuttedByPxql(xql1, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统1更新负荷切除信息
 		UpdateCuttedInfo(dev, 1, 2);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC8, "8-1", xql1 + hjz, dev->p_all_kq + hjz);
 
 		//系统2故障
 		ClearCuttedTag(dev);
 		//先切除化机双线、华总双线
 		hjz = CutHJZXFirst(dev, 2);
 		CalPKqFault(dev, fault, 2, 2);
-		strcpy(dev->tac.tac_num, "8-2");
-		dev->tac.tac_yq = xql2;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "8-2");
+		//dev->tac.tac_yq = xql2;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql2 -= hjz;
 		//系统2计算负荷切除信息
 		LoadCuttedByPxql(xql2, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//系统2更新负荷切除信息
 		UpdateCuttedInfo(dev, 2, 2);
+		
+		ExportLoadOutput(dev, INDEX_TAC8+1, "8-2", xql2 + hjz, dev->p_all_kq + hjz);
 
-		//输出策略结果
-		ExportLoadOutput(dev);
 	}else if (stat_action_200ms && stat_action && dev->HWJ9572){//9572运行
 		triggered++;
 		xql = dev->P9562 + dev->P9561;
@@ -1411,16 +1222,16 @@ int RUN_TAC_NO8_FAULT(DEVINFO* dev, FAULTINFO* fault){
 		//先切除化机双线、华总双线
 		hjz = CutHJZXFirst(dev, 3);
 		CalPKqFault(dev, fault, 3, 2);
-		strcpy(dev->tac.tac_num, "8-3");
-		dev->tac.tac_yq = xql;
-		dev->tac.tac_kq = dev->p_all_kq + hjz;
+		//strcpy(dev->tac.tac_num, "8-3");
+		//dev->tac.tac_yq = xql;
+		//dev->tac.tac_kq = dev->p_all_kq + hjz;
 		xql -= hjz;
 		//全网计算负荷切除信息
 		LoadCuttedByPxql(xql, dev->p_all_kq, dev->p_40_kq, dev->p_prior, dev->cutted_prior, MAX_PRIOR, dev->p_qq_setting);
 		//全网更新负荷切除信息
 		UpdateCuttedInfo(dev, 3, 2);
 		//输出策略结果
-		ExportLoadOutput(dev);
+		ExportLoadOutput(dev, INDEX_TAC8+2, "8-3", xql + hjz, dev->p_all_kq + hjz);
 
 	}
 
@@ -1447,6 +1258,42 @@ void InitializeFault(FAULTINFO* fault){
 	fault->FT_CH4_S2 = 0;
 }
 
+//初始化策略输出结果
+void InitializeTacOutput(DEVINFO* dev){
+	//策略编号
+	strcpy(dev->tac[0].tac_num, "1-1");
+	strcpy(dev->tac[1].tac_num, "2-1");
+	strcpy(dev->tac[2].tac_num, "3-1");
+	strcpy(dev->tac[3].tac_num, "4-1");
+	strcpy(dev->tac[4].tac_num, "5-1");
+	strcpy(dev->tac[5].tac_num, "5-2");
+	strcpy(dev->tac[6].tac_num, "5-3");
+	strcpy(dev->tac[7].tac_num, "6-1");
+	strcpy(dev->tac[8].tac_num, "6-2");
+	strcpy(dev->tac[9].tac_num, "6-3");
+	strcpy(dev->tac[10].tac_num, "7-1");
+	strcpy(dev->tac[11].tac_num, "7-2");
+	strcpy(dev->tac[12].tac_num, "7-3");
+	strcpy(dev->tac[13].tac_num, "8-1");
+	strcpy(dev->tac[14].tac_num, "8-2");
+	strcpy(dev->tac[15].tac_num, "8-3");
+	for (int i = 0;i < TACOUT_NUM;i++){
+			//strcpy(dev->tac[i].tac_num,"");
+			dev->tac[i].tac_kq = 0.0;
+			dev->tac[i].tac_yq = 0.0;
+			dev->tac[i].tac_sq = 0.0;
+			dev->tac[i].data_num = LOAD_P_NUM + 4;
+			dev->tac[i].data = dev->LoadOutput[i];
+		for (int j = 0;j < LOAD_P_NUM+4;j++){
+			dev->LoadOutput[i][j].fun_num = dev->load[j].fun;
+			dev->LoadOutput[i][j].inf_num = dev->load[j].inf;
+			dev->LoadOutput[i][j].cutted = false;
+		}
+	}
+	return;
+}
+
+
 void SetFault(FAULTINFO* fault, uint32 ft){
 	fault->T9511 = uint8(ft & 0x1);
 	fault->T9512 = uint8((ft>>1) & 0x1);
@@ -1464,6 +1311,26 @@ void SetFault(FAULTINFO* fault, uint32 ft){
 	fault->FT_CH3_S2 = uint8((ft>>13) & 0x1);
 	fault->FT_CH4_S1 = uint8((ft>>14) & 0x1);
 	fault->FT_CH4_S2 = uint8((ft>>15) & 0x1);
+	return;
+}
+
+//设置全策略检索
+void SetAllFault(FAULTINFO* fault){
+	fault->T9511 = 0x1;
+	fault->T9512 = 0x1;
+	fault->T9591 = 0x1;
+	fault->T9561 = 0x1;
+	fault->T9562 = 0x1;
+	fault->T9572 = 0x1;
+	fault->FT_CH3_S1 = 0x1;
+	fault->FT_CH3_S2 = 0x1;
+	fault->FT_CH4_S1 = 0x1;
+	fault->FT_CH4_S2 = 0x1;
+	fault->FT_KGZ_S1 = 0x1;
+	fault->FT_KGZ_S2 = 0x1;
+	fault->FT_EKY_S1 = 0x1;
+	fault->FT_EKY_S2 = 0x1;
+
 	return;
 }
 
@@ -1552,10 +1419,19 @@ void run_tac_simulate(){
 	HandleLoadSys(&devdata);	
 	//4. 计算故障后系统互联
 	CheckSysConn(&devdata, &faultdata);
+
+	SetAllFault(&faultdata);
+	devdata.Conn_S1 = 1;
+	devdata.Conn_S2 = 1;
+	devdata.Conn_S1S2 = 0;
+
 	if(devdata.Conn_S1S2) return;//系统12互联且联网，则不计算相应策略
 
+	InitializeTacOutput(&devdata);
 	//CalLoadStatics(&devdata);
-#ifdef _DEBUG
+#ifdef _LOG
+	//输出系统状态数据
+	LogFuncSysdata(&devdata);
 	cout << "开关运行" << endl;
 	cout <<"9511:" << int(devdata.HWJ9511) << int(faultdata.T9511)<< endl;
 	cout <<"9512:" << int(devdata.HWJ9512) << int(faultdata.T9512)<< endl
@@ -1586,6 +1462,10 @@ void run_tac_simulate(){
 	trigg = RUN_TAC_NO6_FAULT(&devdata,&faultdata);
 	trigg = RUN_TAC_NO7_FAULT(&devdata,&faultdata);
 	trigg = RUN_TAC_NO8_FAULT(&devdata,&faultdata);
+
+#ifndef _DEBUG
+	func_send(SHZZ,devdata.tac, TACOUT_NUM, env_send);
+#endif
 
 	return;
 }

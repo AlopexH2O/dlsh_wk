@@ -40,46 +40,42 @@ void LoadCuttedByPxql(float xql, float p_all_kq, float p_40_kq, float* p_prior, 
 void UpdateCuttedInfo(DEVINFO* dev, uint8 no_sys, uint8 vl);
 
 //输出负荷切除信息
-void ExportLoadOutput(DEVINFO* dev);
+void ExportLoadOutput(DEVINFO* dev, int tac_index, char* tac_num, float yq, float kq);
 
 //首先切除化机双线，华总双线
 float CutHJZXFirst(DEVINFO* dev, uint8 sys);
 
 //tac_no 1
-int RUN_TAC_NO1(DEVINFO* dev);
 int RUN_TAC_NO1_FAULT(DEVINFO* dev, FAULTINFO* fault);
 
 //tac_no 2
-int RUN_TAC_NO2(DEVINFO* dev);
 int RUN_TAC_NO2_FAULT(DEVINFO* dev, FAULTINFO* fault);
 
 //tac_no 3
-int RUN_TAC_NO3(DEVINFO* dev);
 int RUN_TAC_NO3_FAULT(DEVINFO* dev, FAULTINFO* fault);
 
 //tac_no 4
-int RUN_TAC_NO4(DEVINFO* dev);
 int RUN_TAC_NO4_FAULT(DEVINFO* dev, FAULTINFO* fault);
 
 //tac_no 5
-int RUN_TAC_NO5(DEVINFO* dev);
 int RUN_TAC_NO5_FAULT(DEVINFO* dev, FAULTINFO* fault);
 
 //tac_no 6
-int RUN_TAC_NO6(DEVINFO* dev);
 int RUN_TAC_NO6_FAULT(DEVINFO* dev, FAULTINFO* fault);
 
 //tac_no 7
-int RUN_TAC_NO7(DEVINFO* dev);
 int RUN_TAC_NO7_FAULT(DEVINFO* dev, FAULTINFO* fault);
 
 //tac_no 8
-int RUN_TAC_NO8(DEVINFO* dev);
 int RUN_TAC_NO8_FAULT(DEVINFO* dev, FAULTINFO* fault);
 
 
 //初始化故障
 void InitializeFault(FAULTINFO* fault);
+
+//初始化策略输出结果
+void InitializeTacOutput(DEVINFO* dev);
+
 //设置故障
 void SetFault(FAULTINFO* fault, uint32 ft);
 
@@ -91,5 +87,10 @@ void CalPKqFault(DEVINFO*dev, FAULTINFO* fault, uint8 sys, uint8 vl);
 
 //根据系统故障及开关位置运行情况推测系统互联情况
 void CheckSysConn(DEVINFO* dev, FAULTINFO* fault);
+
+//输出读取数据信息
+void LogFuncReadInfo(InputItem *input,uint8 data_num);
+void LogFuncSendInfo(TacOutput *output);
+void LogFuncSysdata(DEVINFO* dev);
 
 #endif

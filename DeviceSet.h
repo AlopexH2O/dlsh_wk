@@ -16,14 +16,22 @@
 typedef unsigned char uint8;
 
 //厂站标识
-#define SHZZ "石化主"
-#define SHZ  "石化子"
-#define KGZ  "开关站"
-#define EKY  "二空压"
-#define CH3  "三催化"
-#define CH4  "四催化"
+#define SHZZ "SHZZ"
+#define SHZ  "SHZ"
+#define KGZ  "KGZ"
+#define EKY  "EKY"
+#define CH3  "CH3"
+#define CH4  "CH4"
 
-
+#define TACOUT_NUM 16
+#define INDEX_TAC1 0
+#define INDEX_TAC2 1
+#define INDEX_TAC3 2
+#define INDEX_TAC4 3
+#define INDEX_TAC5 4
+#define INDEX_TAC6 7
+#define INDEX_TAC7 10
+#define INDEX_TAC8 13
 
 #define LOAD_ALIVE_P   1.0
 
@@ -89,20 +97,20 @@ const uint8 INF_SYS_STAT[SYS_STAT_NUM] = {76, 77, 78, 65, 66, 67, 68, 69, 70, 71
 
 //开关站负荷系统连接信息
 //66kV母线挂载信息
-const uint8 FUN_KGZ_LOAD[LINE_NUM_KGZ] = {1, 2, 3, 4, 5, 6, 7, 8, 9 ,10, 11, 12};
-const uint8 INF_KGZ_LOAD[LINE_NUM_KGZ] = {1, 2, 3, 4, 5, 6, 7, 8, 9 ,10, 11, 12};
+const uint8 FUN_KGZ_LOAD[LINE_NUM_KGZ] = {12,12,12,12,12,12,12,12,12,12,12,12};
+const uint8 INF_KGZ_LOAD[LINE_NUM_KGZ] = { 3, 5, 7, 9,11,13,15,17,19,21,23,25};
 
 //二空压负荷系统连接信息
-const uint8 FUN_EKY_LOAD[LINE_NUM_EKY] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-const uint8 INF_EKY_LOAD[LINE_NUM_EKY] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+const uint8 FUN_EKY_LOAD[LINE_NUM_EKY] = {12,12,12,12,12,12,12,12,12};
+const uint8 INF_EKY_LOAD[LINE_NUM_EKY] = { 3, 5, 7, 9,11,13,15,17,19};
 
 //三催化负荷系统连接信息
-const uint8 FUN_CH3_LOAD[LINE_NUM_CH3] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
-const uint8 INF_CH3_LOAD[LINE_NUM_CH3] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+const uint8 FUN_CH3_LOAD[LINE_NUM_CH3] = {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12};
+const uint8 INF_CH3_LOAD[LINE_NUM_CH3] = { 3,  5,  7,  9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41};
 
 //四催化负荷系统连接信息
-const uint8 FUN_CH4_LOAD[LINE_NUM_CH4] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
-const uint8 INF_CH4_LOAD[LINE_NUM_CH4] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
+const uint8 FUN_CH4_LOAD[LINE_NUM_CH4] = {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12};
+const uint8 INF_CH4_LOAD[LINE_NUM_CH4] = { 3,  5,  7,  9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45};
 
 //石化控制子站--9571开关TWJ信息
 const uint8 FUN_SHZ_LOAD[LINE_NUM_SHZ] = {15 };
